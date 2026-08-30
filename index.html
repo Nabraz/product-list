@@ -16,6 +16,18 @@
         .dense-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; padding: 5px 6px; background: #374151; color: #fff; font-weight: 700; }
         .dense-table td { padding: 5px 6px; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
         .dense-table tr:hover td { background: #f9fafb; }
+
+        /* Used phone two-row table */
+        .sh-table { font-size: 11px; border-collapse: collapse; width: 100%; }
+        .sh-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; padding: 5px 6px; background: #374151; color: #fff; font-weight: 700; }
+        .sh-table td { padding: 4px 6px; vertical-align: top; }
+        .sh-row-main td { border-bottom: none; cursor: pointer; }
+        .sh-row-main:hover td { background: #f9fafb; }
+        .sh-row-sub td { border-bottom: 1px solid #e5e7eb; padding-top: 0; padding-bottom: 5px; }
+        .sh-row-detail td { border-bottom: 1px solid #c7d2fe; background: #eef2ff; }
+        .sh-device-name { font-weight: 600; font-size: 11px; color: #111827; line-height: 1.3; }
+        .sh-device-sub { font-size: 10px; color: #6b7280; line-height: 1.4; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 1px; }
+        .sh-branch-cell { font-size: 10px; color: #4f46e5; font-weight: 600; vertical-align: top; padding-top: 5px !important; white-space: nowrap; }
         .dense-table .sn { color: #9ca3af; font-size: 10px; font-variant-numeric: tabular-nums; }
         .brand-cell .brand-name { color: #1d4ed8; font-weight: 700; font-size: 11px; display: block; line-height: 1.2; }
         .brand-cell .type-badge { color: #6b7280; font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-top: 1px; }
@@ -240,86 +252,96 @@
                 </div>
             </div>
 
-            <!-- Search bar -->
+            <!-- Search & Group-by bar -->
             <div class="flex gap-1.5 px-2 py-1.5 bg-white border-b border-gray-100">
                 <input type="text" x-model="shSearchQuery" placeholder="🔍 Search name, type, color…" class="flex-1 min-w-0 px-2 py-1.5 text-[11px] border border-gray-200 rounded-lg bg-gray-50 outline-none focus:border-blue-400">
-                <select x-model="shFilterBranch" class="px-1.5 py-1.5 text-[10px] border border-gray-200 rounded-lg bg-gray-50 max-w-[100px]">
-                    <option value="">All Branches</option>
-                    <template x-for="branch in shUniqueBranches">
-                        <option :value="branch" x-text="branch"></option>
-                    </template>
-                </select>
-                <button x-show="shSearchQuery || shFilterBranch" @click="clearAllFilters()" class="px-2 py-1 text-[10px] bg-gray-200 rounded-lg font-semibold text-gray-600">✕</button>
+                <div class="flex rounded-lg overflow-hidden border border-gray-200 shrink-0">
+                    <button @click="shGroupBy = 'branch'" :class="shGroupBy === 'branch' ? 'bg-gray-700 text-white' : 'bg-gray-50 text-gray-600'" class="px-2 py-1 text-[10px] font-semibold transition-colors">Branch</button>
+                    <button @click="shGroupBy = 'type'" :class="shGroupBy === 'type' ? 'bg-gray-700 text-white' : 'bg-gray-50 text-gray-600'" class="px-2 py-1 text-[10px] font-semibold transition-colors border-l border-gray-200">Type</button>
+                </div>
+                <button x-show="shSearchQuery" @click="shSearchQuery = ''" class="px-2 py-1 text-[10px] bg-gray-200 rounded-lg font-semibold text-gray-600">✕</button>
             </div>
 
-            <template x-for="branchGroup in groupedSecondHandByBranch" :key="branchGroup.branch">
-                <div class="bg-white border-b border-gray-200">
-                    <div class="px-3 py-2 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between">
-                        <h3 class="font-bold text-indigo-800 text-xs" x-text="branchGroup.branch"></h3>
-                        <span class="text-[10px] text-indigo-600 font-semibold"><span x-text="branchGroup.count"></span> devices</span>
-                    </div>
-
-                    <div class="divide-y divide-gray-100">
-                        <template x-for="typeGroup in branchGroup.types" :key="branchGroup.branch + '-' + typeGroup.type">
-                            <div x-data="{ expanded: false }">
-                                <button @click="expanded = !expanded" class="w-full px-3 py-2 text-left flex items-center justify-between bg-gray-50 hover:bg-gray-100">
-                                    <div class="flex items-center gap-1.5">
-                                        <span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-semibold" x-text="typeGroup.type"></span>
-                                    </div>
-                                    <span class="text-[10px] text-gray-500 font-semibold"><span x-text="typeGroup.items.length"></span> items <span x-text="expanded ? '▲' : '▼'"></span></span>
-                                </button>
-
-                                <div x-show="expanded" class="overflow-x-auto">
-                                    <table class="dense-table">
-                                        <thead>
-                                            <tr>
-                                                <th class="text-center">#</th>
-                                                <th>DATE</th>
-                                                <th>PRODUCT</th>
-                                                <th class="text-right">COST</th>
-                                                <th class="text-right">SALE</th>
-                                                <th>IMEI</th>
-                                                <th>COLOR</th>
-                                                <th class="text-center">BAT</th>
-                                                <th></th>
+            <!-- Flat two-row-per-item table grouped by selected criteria -->
+            <div class="bg-white overflow-x-auto">
+                <template x-for="group in groupedSecondHand" :key="group.key">
+                    <div>
+                        <!-- Group header -->
+                        <div class="px-3 py-1.5 bg-indigo-50 border-b border-indigo-100 border-t border-t-gray-200 flex items-center justify-between">
+                            <span class="font-bold text-indigo-800 text-xs" x-text="group.key"></span>
+                            <span class="text-[10px] text-indigo-600 font-semibold" x-text="group.items.length + ' devices'"></span>
+                        </div>
+                        <table class="sh-table">
+                            <thead>
+                                <tr>
+                                    <th x-text="shGroupBy === 'branch' ? 'BRANCH' : 'TYPE'" style="width:70px"></th>
+                                    <th>DEVICE</th>
+                                    <th>INFO</th>
+                                    <th class="text-right" style="width:52px">COST</th>
+                                    <th class="text-right" style="width:52px">SALE</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="item in group.items" :key="item.id">
+                                    <template x-if="true">
+                                        <tbody>
+                                            <!-- Row 1: main info, clickable -->
+                                            <tr class="sh-row-main" @click="toggleSecondHandNotes(item.id)" style="cursor:pointer">
+                                                <td class="sh-branch-cell" x-text="shGroupBy === 'branch' ? item.branch : item.type"></td>
+                                                <td>
+                                                    <div class="sh-device-name" x-text="item.productName"></div>
+                                                    <div class="sh-device-sub">
+                                                        <span x-show="item.color" x-text="item.color"></span>
+                                                        <template x-if="item.batteryHealth">
+                                                            <span class="flex items-center gap-0.5">
+                                                                <span :class="item.batteryHealth >= 80 ? 'text-green-600' : item.batteryHealth >= 60 ? 'text-yellow-600' : 'text-red-600'" class="font-semibold">
+                                                                    🔋 <span x-text="item.batteryHealth + '%'"></span>
+                                                                </span>
+                                                            </span>
+                                                        </template>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div x-show="item.imei" class="text-[10px] text-gray-500 font-mono">IMEI: <span x-text="item.imei"></span></div>
+                                                    <div x-show="item.otherInfo" class="text-[10px] text-indigo-600 font-semibold mt-0.5">Notes</div>
+                                                </td>
+                                                <td class="text-right">
+                                                    <span x-show="showAllPrices" class="text-orange-600 font-bold text-[11px] whitespace-nowrap" x-text="formatCurrency(item.costPrice)"></span>
+                                                    <span x-show="!showAllPrices" class="text-orange-600 font-bold text-[10px]">••••</span>
+                                                </td>
+                                                <td class="text-right">
+                                                    <span x-show="showAllPrices" class="text-green-600 font-bold text-[11px] whitespace-nowrap" x-text="formatCurrency(item.expectedSalesPrice)"></span>
+                                                    <span x-show="!showAllPrices" class="text-green-600 font-bold text-[10px]">••••</span>
+                                                </td>
                                             </tr>
-                                        </thead>
-                                        <template x-for="(item, index) in typeGroup.items" :key="item.id">
-                                            <tbody>
-                                                <tr>
-                                                    <td class="sn text-center" x-text="index + 1"></td>
-                                                    <td class="text-gray-500 whitespace-nowrap text-[10px]" x-text="item.acquiredDate"></td>
-                                                    <td>
-                                                        <button @click="toggleSecondHandNotes(item.id)" class="text-left w-full hover:text-indigo-700 font-medium text-[11px] text-gray-900" x-text="item.productName"></button>
-                                                    </td>
-                                                    <td class="text-orange-600 font-bold text-right whitespace-nowrap" x-text="showAllPrices ? formatCurrency(item.costPrice) : '•••'"></td>
-                                                    <td class="text-green-600 font-bold text-right whitespace-nowrap" x-text="showAllPrices ? formatCurrency(item.expectedSalesPrice) : '•••'"></td>
-                                                    <td class="text-gray-500 text-[9px] font-mono" x-text="item.imei"></td>
-                                                    <td class="text-gray-700 whitespace-nowrap text-[10px]" x-text="item.color"></td>
-                                                    <td class="text-center">
-                                                        <span :class="item.batteryHealth >= 80 ? 'bg-green-100 text-green-700' : item.batteryHealth >= 60 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'"
-                                                            class="px-1 py-0.5 rounded font-bold text-[9px]" x-text="item.batteryHealth ? item.batteryHealth + '%' : '—'"></span>
-                                                    </td>
-                                                    <td>
-                                                        <button @click="toggleSecondHandNotes(item.id)" class="text-[10px] text-indigo-600 font-semibold">···</button>
-                                                    </td>
-                                                </tr>
-                                                <tr x-show="openedSecondHandNoteId === item.id" class="bg-indigo-50">
-                                                    <td colspan="9" class="px-3 py-2 text-[10px] text-gray-700">
+                                            <!-- Row 2: detail panel (shown on click) -->
+                                            <tr class="sh-row-detail" x-show="openedSecondHandNoteId === item.id">
+                                                <td colspan="5" class="px-3 py-2 text-[10px] text-gray-700">
+                                                    <div class="flex flex-wrap gap-x-4 gap-y-1">
+                                                        <span x-show="item.acquiredDate"><span class="font-semibold text-gray-500">Date:</span> <span x-text="item.acquiredDate"></span></span>
+                                                        <span x-show="item.branch"><span class="font-semibold text-gray-500">Branch:</span> <span x-text="item.branch"></span></span>
+                                                        <span x-show="item.type"><span class="font-semibold text-gray-500">Type:</span> <span x-text="item.type"></span></span>
+                                                        <span x-show="item.imei"><span class="font-semibold text-gray-500">IMEI:</span> <span class="font-mono" x-text="item.imei"></span></span>
+                                                        <span x-show="item.color"><span class="font-semibold text-gray-500">Color:</span> <span x-text="item.color"></span></span>
+                                                        <span x-show="item.batteryHealth"><span class="font-semibold text-gray-500">Battery:</span> <span x-text="item.batteryHealth + '%'"></span></span>
+                                                        <span x-show="showAllPrices"><span class="font-semibold text-gray-500">Cost:</span> <span class="text-orange-600 font-bold" x-text="formatCurrency(item.costPrice)"></span></span>
+                                                        <span x-show="showAllPrices"><span class="font-semibold text-gray-500">Sale:</span> <span class="text-green-600 font-bold" x-text="formatCurrency(item.expectedSalesPrice)"></span></span>
+                                                    </div>
+                                                    <div x-show="item.otherInfo" class="mt-1.5 pt-1.5 border-t border-indigo-200">
                                                         <span class="font-semibold text-indigo-700">Notes: </span>
-                                                        <span x-text="item.otherInfo || 'No notes'"></span>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </template>
-                                    </table>
-                                </div>
-                            </div>
-                        </template>
+                                                        <span x-text="item.otherInfo"></span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </template>
+                                </template>
+                            </tbody>
+                        </table>
                     </div>
-                </div>
-            </template>
-            <div x-show="groupedSecondHandByBranch.length === 0" class="bg-white p-10 text-center text-gray-400 font-semibold text-xs">No devices found.</div>
+                </template>
+            </div>
+            <div x-show="groupedSecondHand.length === 0" class="bg-white p-10 text-center text-gray-400 font-semibold text-xs">No devices found.</div>
         </div>
 
         <!-- ================= TAB 3: SUMMARY ================= -->
@@ -343,6 +365,32 @@
                     <p class="text-[9px] text-gray-400 font-semibold uppercase">Avg Margin</p>
                     <p class="text-sm font-bold text-purple-700" x-text="avgMarginPercent.toFixed(1) + '%'"></p>
                 </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-3">
+                <h2 class="text-xs font-bold text-gray-900 border-b pb-2 mb-3">🏷️ By Brand</h2>
+                <table class="dense-table">
+                    <thead>
+                        <tr>
+                            <th>BRAND</th>
+                            <th class="text-right">ITEMS</th>
+                            <th class="text-right">VALUE</th>
+                            <th class="text-right">AVG</th>
+                            <th class="text-right">MARGIN</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="b in brandStats" :key="b.name">
+                            <tr>
+                                <td class="font-semibold text-gray-800"><button @click="setBrandFilter(b.name)" class="hover:text-indigo-700" x-text="b.name"></button></td>
+                                <td class="text-right font-mono" x-text="b.count"></td>
+                                <td class="text-right font-mono text-blue-700 font-bold" x-text="formatCurrency(b.totalMrp)"></td>
+                                <td class="text-right font-mono" x-text="formatCurrency(b.avgMrp)"></td>
+                                <td class="text-right font-mono text-green-600 font-bold" x-text="b.margin.toFixed(1) + '%'"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
             </div>
 
             <div class="bg-white rounded-xl shadow-sm p-3">
@@ -373,33 +421,6 @@
                         </div>
                     </template>
                 </div>
-            </div>
-
-            <!-- Brand Summary -->
-            <div class="bg-white rounded-xl shadow-sm p-3">
-                <h2 class="text-xs font-bold text-gray-900 border-b pb-2 mb-3">🏷️ By Brand</h2>
-                <table class="dense-table">
-                    <thead>
-                        <tr>
-                            <th>BRAND</th>
-                            <th class="text-right">ITEMS</th>
-                            <th class="text-right">VALUE</th>
-                            <th class="text-right">AVG</th>
-                            <th class="text-right">MARGIN</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <template x-for="b in brandStats" :key="b.name">
-                            <tr>
-                                <td class="font-semibold text-gray-800"><button @click="setBrandFilter(b.name)" class="hover:text-indigo-700" x-text="b.name"></button></td>
-                                <td class="text-right font-mono" x-text="b.count"></td>
-                                <td class="text-right font-mono text-blue-700 font-bold" x-text="formatCurrency(b.totalMrp)"></td>
-                                <td class="text-right font-mono" x-text="formatCurrency(b.avgMrp)"></td>
-                                <td class="text-right font-mono text-green-600 font-bold" x-text="b.margin.toFixed(1) + '%'"></td>
-                            </tr>
-                        </template>
-                    </tbody>
-                </table>
             </div>
         </div>
 
@@ -464,6 +485,7 @@
                 filterType: '',
                 shSearchQuery: '',
                 shFilterBranch: '',
+                shGroupBy: 'branch',
 
                 init() {
                     // Check local storage for cached data on load
@@ -601,6 +623,19 @@
 
                 get shUniqueBranches() {
                     return [...new Set(this.secondHandProducts.map(p => p.branch))].filter(Boolean).sort();
+                },
+
+                get groupedSecondHand() {
+                    const key = this.shGroupBy === 'branch' ? 'branch' : 'type';
+                    const grouped = this.filteredSecondHand.reduce((acc, item) => {
+                        const k = item[key] || ('Unknown ' + (key === 'branch' ? 'Branch' : 'Type'));
+                        if (!acc[k]) acc[k] = [];
+                        acc[k].push(item);
+                        return acc;
+                    }, {});
+                    return Object.entries(grouped)
+                        .sort((a, b) => a[0].localeCompare(b[0]))
+                        .map(([k, items]) => ({ key: k, items }));
                 },
 
                 get groupedSecondHandByBranch() {
