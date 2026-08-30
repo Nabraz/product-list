@@ -1,6 +1,6 @@
 {
-  "name": "Stock Detail",
-  "short_name": "Stock Detail",
+  "name": "Inventory Manager",
+  "short_name": "Inventory",
   "description": "Product catalog and second hand inventory management",
   "start_url": "./index.html",
   "display": "standalone",
@@ -9,16 +9,22 @@
   "orientation": "portrait",
   "icons": [
     {
+      "src": "https://png.pngtree.com/png-vector/20260523/ourmid/pngtree-inventory-management-ios-app-icon-on-white-png-image_19389235.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
+      "purpose": "any"
+    },
+    {
       "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable"
     }
   ]
 }

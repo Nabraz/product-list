@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Stock Detail</title>
+    <title>Inventory Manager</title>
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Stock Detail">
-    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="apple-mobile-web-app-title" content="Inventory">
+    <link rel="apple-touch-icon" href="https://png.pngtree.com/png-vector/20260523/ourmid/pngtree-inventory-management-ios-app-icon-on-white-png-image_19389235.webp">
+    <link rel="icon" href="https://png.pngtree.com/png-vector/20260523/ourmid/pngtree-inventory-management-ios-app-icon-on-white-png-image_19389235.webp">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: #f0f2f5; }
@@ -20,20 +21,20 @@
             backdrop-filter: saturate(180%) blur(20px);
             -webkit-backdrop-filter: saturate(180%) blur(20px);
             border-top: 1px solid rgba(0,0,0,0.08);
-            padding-bottom: max(env(safe-area-inset-bottom), 8px);
+            padding-bottom: max(env(safe-area-inset-bottom), 20px);
             box-shadow: 0 -1px 0 rgba(0,0,0,0.06), 0 -4px 20px rgba(0,0,0,0.06);
         }
-        main { padding-bottom: calc(68px + max(env(safe-area-inset-bottom), 8px)); }
+        main { padding-bottom: calc(84px + max(env(safe-area-inset-bottom), 20px)); }
 
         /* Dense table */
         .dense-table { font-size: 11px; border-collapse: collapse; width: 100%; }
-        .dense-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; padding: 5px 6px; background: #374151; color: #fff; font-weight: 700; }
+        .dense-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; padding: 5px 6px; background: #374151; color: #fff; font-weight: 700; text-align: left; }
         .dense-table td { padding: 5px 6px; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
         .dense-table tr:hover td { background: #f9fafb; }
 
         /* Used phone two-row table */
         .sh-table { font-size: 11px; border-collapse: collapse; width: 100%; }
-        .sh-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; padding: 5px 6px; background: #374151; color: #fff; font-weight: 700; }
+        .sh-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; padding: 5px 6px; background: #374151; color: #fff; font-weight: 700; text-align: left; }
         .sh-table td { padding: 4px 6px; vertical-align: top; }
         .sh-row-main td { border-bottom: none; }
         .sh-row-main:hover td { background: #f9fafb; }
@@ -61,9 +62,9 @@
     <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
         <div class="flex items-center justify-between px-3 py-2">
             <div class="flex items-center gap-2">
-            <span class="text-lg" x-text="activeTab === 'secondhand' ? '📱' : '🎧'"></span>
+            <span class="text-lg" x-text="activeTab === 'secondhand' ? '📱' : activeTab === 'list' ? '🎧' : activeTab === 'metrics' ? '📊' : '📋'"></span>
                 <div>
-                <h1 class="text-sm font-bold text-gray-900 leading-tight" x-text="activeTab === 'secondhand' ? 'Second Hand DB' : 'Accessories DB'"></h1>
+                <h1 class="text-sm font-bold text-gray-900 leading-tight" x-text="activeTab === 'secondhand' ? 'Second Hand DB' : activeTab === 'list' ? 'Accessories DB' : activeTab === 'metrics' ? 'Metrics' : 'Summary'"></h1>
                     <p class="text-[9px] text-gray-400" x-text="lastSynced ? 'Synced: ' + lastSynced : 'Not synced'"></p>
                 </div>
             </div>
@@ -303,9 +304,8 @@
                                 <tr>
                                     <th style="width:74px">ACQ DATE</th>
                                     <th>PRODUCT NAME</th>
-                                    <th style="width:80px">IMEI</th>
-                                    <th style="width:40px">BH</th>
-                                    <th class="text-right" style="width:66px">SALE PRICE</th>
+                                    <th style="width:130px; padding-left:10px">IMEI</th>
+                                    <th class="text-right" style="width:72px">SALE PRICE</th>
                                 </tr>
                             </thead>
                                 <template x-for="item in group.items" :key="item.id">
@@ -317,19 +317,16 @@
                                                 <td>
                                                     <div class="sh-device-name" x-text="item.productName || '-'"></div>
                                                 </td>
-                                                <td class="text-[9px] font-mono text-gray-600 whitespace-nowrap overflow-hidden" style="max-width:80px;text-overflow:ellipsis" x-text="item.imei || '-'"></td>
-                                                <td class="text-[10px] font-semibold" :class="item.batteryHealth >= 80 ? 'text-green-600' : item.batteryHealth >= 60 ? 'text-yellow-600' : item.batteryHealth ? 'text-red-600' : 'text-gray-500'">
-                                                    <span x-text="item.batteryHealth ? (item.batteryHealth + '%') : '-'"></span>
-                                                </td>
+                                                <td class="text-[9px] font-mono text-gray-600 whitespace-nowrap" style="width:130px; padding-left:10px" x-text="item.imei || '-'"></td>
                                                 <td class="text-right">
                                                     <span class="text-blue-600 font-bold text-[11px] whitespace-nowrap" x-text="formatCurrency(item.expectedSalesPrice)"></span>
                                                 </td>
                                             </tr>
                                             <!-- Row 2: other info + cost price (password protected) -->
                                             <tr class="sh-row-sub">
-                                                <td colspan="5" class="px-3 py-1.5 text-[10px] text-gray-700">
+                                                <td colspan="4" class="px-3 py-1.5 text-[10px] text-gray-700">
                                                     <div class="flex flex-wrap gap-x-4 gap-y-1">
-                                                        <span><span class="font-semibold text-gray-500">Color:</span> <span x-text="item.color || '-'"></span></span>
+                                                        <span><span class="font-semibold text-gray-500">BH:</span> <span :class="item.batteryHealth >= 80 ? 'text-green-600 font-bold' : item.batteryHealth >= 60 ? 'text-yellow-600 font-bold' : item.batteryHealth ? 'text-red-600 font-bold' : 'text-gray-500'" x-text="item.batteryHealth ? (item.batteryHealth + '%') : '-'"></span></span>
                                                         <span><span class="font-semibold text-gray-500">Branch:</span> <span x-text="item.branch || '-'"></span></span>
                                                         <span><span class="font-semibold text-gray-500">Type:</span> <span x-text="item.type || '-'"></span></span>
                                                         <span><span class="font-semibold text-gray-500">Info:</span> <span x-text="item.otherInfo || '-'"></span></span>
@@ -342,7 +339,7 @@
                                                             <span>
                                                                 <span class="font-semibold text-gray-500">Margin:</span>
                                                                 <span :class="(item.expectedSalesPrice - item.costPrice) >= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'"
-                                                                      x-text="((item.expectedSalesPrice - item.costPrice) >= 0 ? '+' : '') + formatCurrency(item.expectedSalesPrice - item.costPrice)"></span>
+                                                                      x-text="item.costPrice > 0 ? (((item.expectedSalesPrice - item.costPrice) >= 0 ? '+' : '') + ((item.expectedSalesPrice - item.costPrice) / item.costPrice * 100).toFixed(1) + '%') : '-'"></span>
                                                             </span>
                                                         </template>
                                                     </div>
@@ -444,7 +441,7 @@
                                                 </div>
                                             </div>
                                             <div class="flex items-center gap-1 shrink-0">
-                                                <span x-show="showAllPrices" class="text-[9px] font-semibold text-blue-600" x-text="cleanCurrencyText(item.cost)"></span>
+                                                <span x-show="showAllPrices" class="text-[9px] font-semibold text-red-600" x-text="cleanCurrencyText(item.cost)"></span>
                                                 <span class="text-[10px] font-bold text-gray-700 font-mono" x-text="cleanCurrencyText(item.mrp)"></span>
                                             </div>
                                         </div>
@@ -459,18 +456,9 @@
 
     </main>
 
-    <!-- Bottom Navigation (iOS 27 style) -->
+    <!-- Bottom Navigation (iOS style with round deck) -->
     <nav class="bottom-nav">
-        <div class="flex pt-1.5">
-            <button @click="switchTab('list')"
-                class="flex-1 flex flex-col items-center justify-center pb-1 gap-0.5 transition-all duration-200 relative">
-                <span :class="activeTab === 'list' ? 'bg-blue-100' : 'bg-transparent'" class="w-12 h-8 flex items-center justify-center rounded-full transition-all duration-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-colors duration-200" :class="activeTab === 'list' ? 'text-blue-600' : 'text-gray-400'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                    </svg>
-                </span>
-                <span class="text-[10px] font-semibold transition-colors duration-200" :class="activeTab === 'list' ? 'text-blue-600' : 'text-gray-400'">Stock</span>
-            </button>
+        <div class="flex pt-2 pb-1 mx-3 bg-gray-100 rounded-2xl mt-2">
             <button @click="switchTab('secondhand')"
                 class="flex-1 flex flex-col items-center justify-center pb-1 gap-0.5 transition-all duration-200 relative">
                 <span :class="activeTab === 'secondhand' ? 'bg-blue-100' : 'bg-transparent'" class="w-12 h-8 flex items-center justify-center rounded-full transition-all duration-200">
@@ -479,6 +467,15 @@
                     </svg>
                 </span>
                 <span class="text-[10px] font-semibold transition-colors duration-200" :class="activeTab === 'secondhand' ? 'text-blue-600' : 'text-gray-400'">Used</span>
+            </button>
+            <button @click="switchTab('list')"
+                class="flex-1 flex flex-col items-center justify-center pb-1 gap-0.5 transition-all duration-200 relative">
+                <span :class="activeTab === 'list' ? 'bg-blue-100' : 'bg-transparent'" class="w-12 h-8 flex items-center justify-center rounded-full transition-all duration-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-colors duration-200" :class="activeTab === 'list' ? 'text-blue-600' : 'text-gray-400'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                </span>
+                <span class="text-[10px] font-semibold transition-colors duration-200" :class="activeTab === 'list' ? 'text-blue-600' : 'text-gray-400'">Accessories</span>
             </button>
             <button @click="switchTab('metrics')"
                 class="flex-1 flex flex-col items-center justify-center pb-1 gap-0.5 transition-all duration-200 relative">
@@ -516,7 +513,7 @@
                 secondHandProducts: [],
                 loading: false,
                 lastSynced: '',
-                activeTab: 'list',
+                activeTab: 'secondhand',
                 showAllPrices: false,
                 
                 // Filters
