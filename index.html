@@ -455,10 +455,10 @@
         </div>
 
     </main>
-
-    <!-- Bottom Navigation (iOS style with round deck) -->
-    <nav class="bottom-nav">
-        <div class="flex pt-2 pb-1 mx-3 bg-gray-100 rounded-2xl mt-2">
+<!-- Bottom Navigation (iOS style floating deck) -->
+    <nav class="fixed bottom-0 left-0 w-full z-50 pb-safe pointer-events-none">
+        <div class="flex justify-around pt-2 pb-1 mx-3 mb-4 bg-gray-100 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-200 pointer-events-auto">
+            
             <button @click="switchTab('secondhand')"
                 class="flex-1 flex flex-col items-center justify-center pb-1 gap-0.5 transition-all duration-200 relative">
                 <span :class="activeTab === 'secondhand' ? 'bg-blue-100' : 'bg-transparent'" class="w-12 h-8 flex items-center justify-center rounded-full transition-all duration-200">
@@ -468,6 +468,7 @@
                 </span>
                 <span class="text-[10px] font-semibold transition-colors duration-200" :class="activeTab === 'secondhand' ? 'text-blue-600' : 'text-gray-400'">Used</span>
             </button>
+
             <button @click="switchTab('list')"
                 class="flex-1 flex flex-col items-center justify-center pb-1 gap-0.5 transition-all duration-200 relative">
                 <span :class="activeTab === 'list' ? 'bg-blue-100' : 'bg-transparent'" class="w-12 h-8 flex items-center justify-center rounded-full transition-all duration-200">
@@ -477,15 +478,17 @@
                 </span>
                 <span class="text-[10px] font-semibold transition-colors duration-200" :class="activeTab === 'list' ? 'text-blue-600' : 'text-gray-400'">Accessories</span>
             </button>
-            <button @click="switchTab('metrics')"
+
+            <button @click="switchTab('analytics')"
                 class="flex-1 flex flex-col items-center justify-center pb-1 gap-0.5 transition-all duration-200 relative">
-                <span :class="activeTab === 'metrics' ? 'bg-blue-100' : 'bg-transparent'" class="w-12 h-8 flex items-center justify-center rounded-full transition-all duration-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-colors duration-200" :class="activeTab === 'metrics' ? 'text-blue-600' : 'text-gray-400'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <span :class="activeTab === 'analytics' ? 'bg-blue-100' : 'bg-transparent'" class="w-12 h-8 flex items-center justify-center rounded-full transition-all duration-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-colors duration-200" :class="activeTab === 'analytics' ? 'text-blue-600' : 'text-gray-400'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
                 </span>
-                <span class="text-[10px] font-semibold transition-colors duration-200" :class="activeTab === 'metrics' ? 'text-blue-600' : 'text-gray-400'">Metrics</span>
+                <span class="text-[10px] font-semibold transition-colors duration-200" :class="activeTab === 'analytics' ? 'text-blue-600' : 'text-gray-400'">Metrics</span>
             </button>
+
             <button @click="switchTab('summary')"
                 class="flex-1 flex flex-col items-center justify-center pb-1 gap-0.5 transition-all duration-200 relative">
                 <span :class="activeTab === 'summary' ? 'bg-blue-100' : 'bg-transparent'" class="w-12 h-8 flex items-center justify-center rounded-full transition-all duration-200">
@@ -495,6 +498,7 @@
                 </span>
                 <span class="text-[10px] font-semibold transition-colors duration-200" :class="activeTab === 'summary' ? 'text-blue-600' : 'text-gray-400'">Summary</span>
             </button>
+            
         </div>
     </nav>
 
