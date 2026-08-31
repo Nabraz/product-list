@@ -14,16 +14,6 @@
     <style>
         body { background: #f0f2f5; }
         .app-shell { max-width: 540px; margin: 0 auto; display: flex; flex-direction: column; min-height: 100vh; position: relative; }
-        .bottom-nav {
-            position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
-            width: 100%; max-width: 540px; z-index: 100;
-            background: rgba(255,255,255,0.82);
-            backdrop-filter: saturate(180%) blur(20px);
-            -webkit-backdrop-filter: saturate(180%) blur(20px);
-            border-top: 1px solid rgba(0,0,0,0.08);
-            padding-bottom: max(env(safe-area-inset-bottom), 20px);
-            box-shadow: 0 -1px 0 rgba(0,0,0,0.06), 0 -4px 20px rgba(0,0,0,0.06);
-        }
         main { padding-bottom: calc(84px + max(env(safe-area-inset-bottom), 20px)); }
 
         /* Dense table */
@@ -38,12 +28,9 @@
         .sh-table td { padding: 4px 6px; vertical-align: top; }
         .sh-row-main td { border-bottom: none; }
         .sh-row-main:hover td { background: #f9fafb; }
-        .sh-row-sub td { border-bottom: 1px solid #e5e7eb; padding-top: 0; padding-bottom: 5px; background: #f9fafb; }
-        .sh-row-detail td { border-bottom: 1px solid #c7d2fe; background: #eef2ff; }
-        .sh-device-name { font-weight: 600; font-size: 11px; color: #111827; line-height: 1.3; }
-        .sh-device-sub { font-size: 10px; color: #6b7280; line-height: 1.4; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 1px; }
-        .sh-branch-cell { font-size: 10px; color: #4f46e5; font-weight: 600; vertical-align: top; padding-top: 5px !important; white-space: nowrap; }
-        .dense-table .sn { color: #9ca3af; font-size: 10px; font-variant-numeric: tabular-nums; }
+        /* Gap between used phones */
+        .sh-row-sub td { border-bottom: 6px solid #f0f2f5; padding-top: 0; padding-bottom: 6px; background: #f9fafb; }
+        .sh-device-name { font-weight: 700; font-size: 12px; color: #000000; line-height: 1.3; }
         .brand-cell .brand-name { color: #1d4ed8; font-weight: 700; font-size: 11px; display: block; line-height: 1.2; }
         .brand-cell .type-badge { color: #6b7280; font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-top: 1px; }
         .mrp-cell { font-size: 11px; color: #1d4ed8; font-weight: 700; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
@@ -54,7 +41,7 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="text-gray-800" x-data="catalogApp()" x-init="init()">
+<body class="text-gray-800" x-data="catalogApp()" x-init="init()" @scroll.window="handleScroll()">
 
 <div class="app-shell">
 
@@ -62,9 +49,9 @@
     <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
         <div class="flex items-center justify-between px-3 py-2">
             <div class="flex items-center gap-2">
-            <span class="text-lg" x-text="activeTab === 'secondhand' ? '📱' : activeTab === 'list' ? '🎧' : activeTab === 'metrics' ? '📊' : '📋'"></span>
+            <span class="text-lg" x-text="activeTab === 'secondhand' ? '📱' : activeTab === 'list' ? '🎧' : activeTab === 'analytics' ? '📊' : '🧾'"></span>
                 <div>
-                <h1 class="text-sm font-bold text-gray-900 leading-tight" x-text="activeTab === 'secondhand' ? 'Second Hand DB' : activeTab === 'list' ? 'Accessories DB' : activeTab === 'metrics' ? 'Metrics' : 'Summary'"></h1>
+                <h1 class="text-sm font-bold text-gray-900 leading-tight" x-text="activeTab === 'secondhand' ? 'Second Hand DB' : activeTab === 'list' ? 'Accessories DB' : activeTab === 'analytics' ? 'Metrics' : 'Summary'"></h1>
                     <p class="text-[9px] text-gray-400" x-text="lastSynced ? 'Synced: ' + lastSynced : 'Not synced'"></p>
                 </div>
             </div>
@@ -157,7 +144,7 @@
                     <tbody>
                         <template x-for="(product, index) in filteredProducts" :key="product.id">
                             <tr>
-                                <td class="sn text-center" x-text="index + 1"></td>
+                                <td class="text-gray-400 font-mono text-[10px] text-center" x-text="index + 1"></td>
                                 <td class="brand-cell">
                                     <button @click="setBrandFilter(product.brand)" class="brand-name hover:underline text-left w-full" x-text="product.brand"></button>
                                     <button @click="setTypeFilter(product.type)" class="type-badge hover:text-blue-500 text-left w-full" x-text="product.type"></button>
@@ -178,8 +165,8 @@
             </div>
         </div>
 
-        <!-- ================= TAB 2: METRICS ================= -->
-        <div x-show="activeTab === 'metrics'" class="p-3 space-y-3">
+        <!-- ================= TAB 2: ANALYTICS ================= -->
+        <div x-show="activeTab === 'analytics'" class="p-3 space-y-3">
 
             <!-- Key Metrics -->
             <div class="grid grid-cols-2 gap-2">
@@ -218,13 +205,6 @@
                         <p class="font-bold text-gray-800 text-xs truncate" x-text="highestPricedProduct ? highestPricedProduct.name + ' — ' + cleanCurrencyText(highestPricedProduct.mrp) : '—'"></p>
                     </div>
                 </div>
-                <div class="bg-white p-3 rounded-xl shadow-sm flex items-center gap-2">
-                    <span class="text-xl">📊</span>
-                    <div>
-                        <p class="text-[9px] text-gray-400 font-semibold uppercase">Avg Retail Price / Item</p>
-                        <p class="font-bold text-gray-800 text-xs" x-text="formatCurrency(avgMrpPerItem)"></p>
-                    </div>
-                </div>
             </div>
 
             <!-- Charts -->
@@ -248,7 +228,7 @@
             </div>
         </div>
 
-        <!-- ================= TAB 4: SECOND HAND PHONES ================= -->
+        <!-- ================= TAB 3: SECOND HAND PHONES ================= -->
         <div x-show="activeTab === 'secondhand'" class="space-y-0">
 
             <!-- Summary chips -->
@@ -313,22 +293,28 @@
                                         <tbody>
                                             <!-- Row 1: main info (always visible) -->
                                             <tr class="sh-row-main">
-                                                <td class="text-[10px] font-semibold text-gray-700" x-text="item.acquiredDate || '-'"></td>
+                                                <td class="text-[10px] text-gray-700" style="width:74px">
+                                                    <div class="font-bold text-black" x-text="item.acquiredDate || '-'"></div>
+                                                    <!-- Stock Aging display calculated from fetch map -->
+                                                    <div x-show="item.age !== undefined && item.age !== ''" class="text-[9px] text-red-600 bg-red-50 inline-block px-1 rounded mt-0.5 font-bold border border-red-100" x-text="item.age + 'd ago'"></div>
+                                                </td>
                                                 <td>
                                                     <div class="sh-device-name" x-text="item.productName || '-'"></div>
                                                 </td>
-                                                <td class="text-[9px] font-mono text-gray-600 whitespace-nowrap" style="width:130px; padding-left:10px" x-text="item.imei || '-'"></td>
+                                                <td class="text-[11px] font-mono text-black font-bold whitespace-nowrap" style="width:130px; padding-left:10px" x-text="item.imei || '-'"></td>
                                                 <td class="text-right">
-                                                    <span class="text-blue-600 font-bold text-[11px] whitespace-nowrap" x-text="formatCurrency(item.expectedSalesPrice)"></span>
+                                                    <span class="text-blue-600 font-bold text-[12px] whitespace-nowrap" x-text="formatCurrency(item.expectedSalesPrice)"></span>
                                                 </td>
                                             </tr>
-                                            <!-- Row 2: other info + cost price (password protected) -->
+                                            <!-- Row 2: other info + cost price -->
                                             <tr class="sh-row-sub">
                                                 <td colspan="4" class="px-3 py-1.5 text-[10px] text-gray-700">
                                                     <div class="flex flex-wrap gap-x-4 gap-y-1">
                                                         <span><span class="font-semibold text-gray-500">BH:</span> <span :class="item.batteryHealth >= 80 ? 'text-green-600 font-bold' : item.batteryHealth >= 60 ? 'text-yellow-600 font-bold' : item.batteryHealth ? 'text-red-600 font-bold' : 'text-gray-500'" x-text="item.batteryHealth ? (item.batteryHealth + '%') : '-'"></span></span>
-                                                        <span><span class="font-semibold text-gray-500">Branch:</span> <span x-text="item.branch || '-'"></span></span>
-                                                        <span><span class="font-semibold text-gray-500">Type:</span> <span x-text="item.type || '-'"></span></span>
+                                                        <!-- Dynamic show/hide based on Group By option -->
+                                                        <span x-show="shGroupBy !== 'branch'"><span class="font-semibold text-gray-500">Branch:</span> <span x-text="item.branch || '-'"></span></span>
+                                                        <span x-show="shGroupBy !== 'type'"><span class="font-semibold text-gray-500">Type:</span> <span x-text="item.type || '-'"></span></span>
+                                                        
                                                         <span><span class="font-semibold text-gray-500">Info:</span> <span x-text="item.otherInfo || '-'"></span></span>
                                                         <span>
                                                             <span class="font-semibold text-gray-500">Cost:</span>
@@ -355,81 +341,63 @@
             <div x-show="groupedSecondHand.length === 0" class="bg-white p-10 text-center text-gray-400 font-semibold text-xs">No devices found.</div>
         </div>
 
-        <!-- ================= TAB 3: SUMMARY ================= -->
-        <div x-show="activeTab === 'summary'" class="p-3 space-y-3">
-
-            <!-- Overall Summary -->
-            <div class="grid grid-cols-2 gap-2">
-                <div class="bg-white p-3 rounded-xl shadow-sm border-l-4 border-blue-500">
-                    <p class="text-[9px] text-gray-400 font-semibold uppercase">Total Retail Value</p>
-                    <p class="text-sm font-bold text-blue-700" x-text="formatCurrency(totalMrpValue)"></p>
+        <!-- ================= TAB 4: SUMMARY ================= -->
+        <div x-show="activeTab === 'summary'" class="p-3 space-y-4">
+            
+            <!-- BY BRAND SECTION -->
+            <div class="bg-white shadow-sm rounded-xl overflow-hidden border border-gray-200">
+                <div class="bg-purple-50 px-4 py-2 border-b border-purple-100">
+                    <h3 class="font-bold text-purple-900 text-sm">🏷️ New Stock by Brand</h3>
                 </div>
-                <div class="bg-white p-3 rounded-xl shadow-sm border-l-4 border-red-500">
-                    <p class="text-[9px] text-gray-400 font-semibold uppercase">Total Cost Value</p>
-                    <p class="text-sm font-bold text-red-600" x-text="formatCurrency(totalCostValue)"></p>
-                </div>
-                <div class="bg-white p-3 rounded-xl shadow-sm border-l-4 border-green-500">
-                    <p class="text-[9px] text-gray-400 font-semibold uppercase">Potential Profit</p>
-                    <p class="text-sm font-bold text-green-600" x-text="formatCurrency(totalProfit)"></p>
-                </div>
-                <div class="bg-white p-3 rounded-xl shadow-sm border-l-4 border-purple-500">
-                    <p class="text-[9px] text-gray-400 font-semibold uppercase">Avg Margin</p>
-                    <p class="text-sm font-bold text-purple-700" x-text="avgMarginPercent.toFixed(1) + '%'"></p>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm p-3">
-                <h2 class="text-xs font-bold text-gray-900 border-b pb-2 mb-3">🏷️ By Brand</h2>
-                <table class="dense-table">
-                    <thead>
-                        <tr>
-                            <th>BRAND</th>
-                            <th class="text-right">ITEMS</th>
-                            <th class="text-right">VALUE</th>
-                            <th class="text-right">AVG</th>
-                            <th class="text-right">MARGIN</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <template x-for="b in brandStats" :key="b.name">
+                <div class="overflow-x-auto">
+                    <table class="dense-table w-full text-left text-xs sm:text-sm">
+                        <thead class="bg-gray-50 text-gray-500 uppercase text-[10px] sm:text-xs">
                             <tr>
-                                <td class="font-semibold text-gray-800"><button @click="setBrandFilter(b.name)" class="hover:text-indigo-700" x-text="b.name"></button></td>
-                                <td class="text-right font-mono" x-text="b.count"></td>
-                                <td class="text-right font-mono text-blue-700 font-bold" x-text="formatCurrency(b.totalMrp)"></td>
-                                <td class="text-right font-mono" x-text="formatCurrency(b.avgMrp)"></td>
-                                <td class="text-right font-mono font-bold" :class="b.margin >= 0 ? 'text-green-600' : 'text-red-600'" x-text="(b.margin >= 0 ? '+' : '') + b.margin.toFixed(1) + '%'"></td>
+                                <th class="px-3 py-2 border-b">Brand</th>
+                                <th class="px-3 py-2 border-b text-right">Items</th>
+                                <th class="px-3 py-2 border-b text-right">Avg Cost</th>
+                                <th class="px-3 py-2 border-b text-right">Avg Sale</th>
+                                <th class="px-3 py-2 border-b text-right">Margin %</th>
                             </tr>
-                        </template>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <template x-for="b in brandStats" :key="b.name">
+                                <tr class="hover:bg-purple-50">
+                                    <td class="px-3 py-2 font-bold text-gray-800" x-text="b.name"></td>
+                                    <td class="px-3 py-2 text-right font-mono text-gray-600" x-text="b.count"></td>
+                                    <td class="px-3 py-2 text-right font-mono text-red-600 font-bold" x-text="showAllPrices ? formatCurrency(b.avgCost) : '••••'"></td>
+                                    <td class="px-3 py-2 text-right font-mono text-blue-700 font-bold" x-text="formatCurrency(b.avgMrp)"></td>
+                                    <td class="px-3 py-2 text-right font-mono font-bold" :class="b.margin >= 0 ? 'text-green-600' : 'text-red-600'" x-text="(b.margin >= 0 ? '+' : '') + b.margin.toFixed(1) + '%'"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div class="px-3 py-2 border-b border-gray-100 flex items-center justify-between">
-                    <h2 class="text-xs font-bold text-gray-900">🧾 By Category</h2>
-                    <span class="text-[10px] text-gray-400 font-semibold" x-text="categoryStats.length + ' categories'"></span>
+            <!-- BY CATEGORY SECTION -->
+            <div class="bg-white shadow-sm rounded-xl overflow-hidden border border-gray-200">
+                <div class="bg-blue-50 px-4 py-2 border-b border-blue-100 flex items-center justify-between">
+                    <h3 class="font-bold text-blue-900 text-sm">📦 New Stock by Category</h3>
+                    <span class="text-[10px] text-blue-600 font-semibold" x-text="categoryStats.length + ' categories'"></span>
                 </div>
                 <div class="divide-y divide-gray-100">
                     <template x-for="cat in categoryStats" :key="cat.name">
                         <div x-data="{ expanded: false }">
-                            <!-- Category header row -->
                             <button @click="expanded = !expanded" class="w-full px-3 py-2 flex items-center gap-2 active:bg-gray-50 text-left">
-                                <!-- Category name + count badge -->
                                 <div class="flex-1 min-w-0 flex items-center gap-1.5">
                                     <span @click.stop="setTypeFilter(cat.name)" class="font-bold text-[11px] text-gray-800 hover:text-indigo-700 truncate leading-tight cursor-pointer" x-text="cat.name || 'Uncategorized'"></span>
                                     <span class="shrink-0 inline-flex items-center justify-center bg-indigo-100 text-indigo-700 rounded-full text-[9px] font-bold leading-none px-1.5 py-0.5" x-text="cat.count"></span>
                                 </div>
-                                <!-- Stats chips -->
                                 <div class="flex items-center gap-1 shrink-0">
-                                    <span class="bg-blue-50 text-blue-700 text-[9px] font-bold px-1.5 py-0.5 rounded" x-show="showAllPrices" x-text="formatCurrency(cat.totalCost)"></span>
-                                    <span class="bg-gray-100 text-gray-700 text-[9px] font-bold px-1.5 py-0.5 rounded" x-text="formatCurrency(cat.totalMrp)"></span>
+                                    <span class="bg-red-50 text-red-600 text-[9px] font-bold px-1.5 py-0.5 rounded" x-show="showAllPrices" x-text="formatCurrency(cat.avgCost)"></span>
+                                    <span class="bg-blue-50 text-blue-700 text-[9px] font-bold px-1.5 py-0.5 rounded" x-text="formatCurrency(cat.avgMrp)"></span>
                                     <span class="text-[9px] font-bold px-1.5 py-0.5 rounded"
                                           :class="cat.margin >= 20 ? 'bg-green-100 text-green-700' : cat.margin >= 10 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'"
                                           x-text="cat.margin.toFixed(0) + '%'"></span>
                                 </div>
                                 <svg class="w-3 h-3 text-gray-400 shrink-0 transition-transform duration-200" :class="expanded ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                             </button>
-                            <!-- Expanded product list -->
                             <div x-show="expanded" class="bg-gray-50 border-t border-gray-100">
                                 <div class="px-3 pt-1.5 pb-2 space-y-0">
                                     <template x-for="item in cat.items" :key="item.id">
@@ -452,11 +420,46 @@
                     </template>
                 </div>
             </div>
+            
+            <!-- USED STOCK SECTION -->
+            <div class="bg-white shadow-sm rounded-xl overflow-hidden border border-gray-200">
+                <div class="bg-indigo-50 px-4 py-2 border-b border-indigo-100">
+                    <h3 class="font-bold text-indigo-900 text-sm">📱 Used Stock by Branch & Type</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="dense-table w-full text-left text-xs sm:text-sm">
+                        <thead class="bg-gray-50 text-gray-500 uppercase text-[10px] sm:text-xs">
+                            <tr>
+                                <th class="px-3 py-2 border-b">Branch</th>
+                                <th class="px-3 py-2 border-b">Type</th>
+                                <th class="px-3 py-2 border-b text-right">Qty</th>
+                                <th class="px-3 py-2 border-b text-right">Total Cost</th>
+                                <th class="px-3 py-2 border-b text-right">Total Sale</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <template x-for="b in groupedSecondHandByBranch" :key="b.branch">
+                                <template x-for="t in b.types" :key="t.type">
+                                    <tr class="hover:bg-indigo-50">
+                                        <td class="px-3 py-2 font-bold text-indigo-700" x-text="b.branch"></td>
+                                        <td class="px-3 py-2 text-gray-800 font-semibold" x-text="t.type"></td>
+                                        <td class="px-3 py-2 text-right font-mono text-gray-600" x-text="t.items.length"></td>
+                                        <td class="px-3 py-2 text-right font-mono text-red-600 font-bold" x-text="showAllPrices ? formatCurrency(t.items.reduce((s, i) => s + (i.costPrice || 0), 0)) : '••••'"></td>
+                                        <td class="px-3 py-2 text-right font-mono text-green-600 font-bold" x-text="formatCurrency(t.items.reduce((s, i) => s + (i.expectedSalesPrice || 0), 0))"></td>
+                                    </tr>
+                                </template>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
     </main>
-<!-- Bottom Navigation (iOS style floating deck) -->
-    <nav class="fixed bottom-0 left-0 w-full z-50 pb-safe pointer-events-none">
+    
+    <!-- Smart Hide/Show Scroll Navigation Bar -->
+    <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[540px] z-50 pb-safe pointer-events-none transition-transform duration-300 ease-in-out"
+         :class="showNav ? 'translate-y-0' : 'translate-y-[150%]'">
         <div class="flex justify-around pt-2 pb-1 mx-3 mb-4 bg-gray-100 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-200 pointer-events-auto">
             
             <button @click="switchTab('secondhand')"
@@ -505,7 +508,6 @@
 </div>
 
     <script>
-        // Global variables to hold Chart instances so they can be destroyed before re-rendering
         let brandChartInstance = null;
         let typeChartInstance = null;
         let priceRangeChartInstance = null;
@@ -519,6 +521,8 @@
                 lastSynced: '',
                 activeTab: 'secondhand',
                 showAllPrices: false,
+                showNav: true,
+                lastScrollY: 0,
                 
                 // Filters
                 searchQuery: '',
@@ -530,7 +534,6 @@
                 shGroupBy: 'branch',
 
                 init() {
-                    // Check local storage for cached data on load
                     const cachedData = localStorage.getItem('catalogData');
                     const cachedTime = localStorage.getItem('catalogSyncTime');
                     
@@ -547,9 +550,21 @@
                     }
                 },
 
+                handleScroll() {
+                    const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+                    if (currentScroll <= 0) {
+                        this.showNav = true; // At top of page, show
+                    } else if (currentScroll > this.lastScrollY) {
+                        this.showNav = false; // Scrolling down, hide
+                    } else {
+                        this.showNav = true; // Scrolling up, show
+                    }
+                    this.lastScrollY = currentScroll;
+                },
+
                 switchTab(tabName) {
                     this.activeTab = tabName;
-                    if (tabName === 'metrics') {
+                    if (tabName === 'analytics') {
                         setTimeout(() => this.renderCharts(), 50);
                     }
                     if (tabName === 'secondhand' && this.secondHandProducts.length === 0) {
@@ -559,12 +574,8 @@
 
                 fetchData() {
                     this.loading = true;
-
-                    // 1. Define JSONP callback
                     window.processSheetData = (json) => {
                         const cols = json.table.cols.map(c => c ? c.label.trim() : '');
-                        
-                        // Map specific columns by header name
                         const brandIdx = cols.indexOf('Brands');
                         const typeIdx = cols.indexOf('Product Type');
                         const nameIdx = cols.indexOf('Product Name');
@@ -583,23 +594,20 @@
                             };
                         }).filter(p => p.name !== '' && p.name !== 'N/A');
 
-                        // Save to cache
                         const now = new Date().toLocaleString();
                         localStorage.setItem('catalogData', JSON.stringify(this.products));
                         localStorage.setItem('catalogSyncTime', now);
                         this.lastSynced = now;
                         this.loading = false;
                         
-                        // Re-render charts after data refresh
-                        setTimeout(() => this.renderCharts(), 50);
-                        // Also refresh second hand data
+                        if (this.activeTab === 'analytics') {
+                            setTimeout(() => this.renderCharts(), 50);
+                        }
                         this.fetchSecondHandData();
                     };
 
-                    // 2. Execute JSONP request
                     const script = document.createElement('script');
                     const sheetId = '1pixGGUak_L7P_Xrz-TE52qXNWZkTZ7Xy-84DvUrJt_I';
-                    // Append timestamp to URL to bust browser HTTP cache during manual reload
                     const nocache = new Date().getTime();
                     script.src = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:processSheetData&_=${nocache}`;
                     document.body.appendChild(script);
@@ -626,12 +634,25 @@
                         this.secondHandProducts = json.table.rows.map((row, index) => {
                             const name = getVal(row, nameIdx);
                             if (!name) return null;
+                            
+                            // Stock Aging Calculation handling strict mm/dd/yyyy formatting
+                            let acqDateStr = getVal(row, dateIdx);
+                            let ageVal = '';
+                            if (acqDateStr) {
+                                let d = new Date(acqDateStr);
+                                if (!isNaN(d.getTime())) {
+                                    let diff = Math.floor((new Date() - d) / (1000 * 60 * 60 * 24));
+                                    ageVal = diff >= 0 ? diff : 0;
+                                }
+                            }
+
                             return {
                                 id: index,
                                 branch: getVal(row, branchIdx),
                                 brand: getVal(row, brandIdx) || String(name).split(' ')[0] || '',
                                 type: getVal(row, typeIdx),
-                                acquiredDate: getVal(row, dateIdx),
+                                acquiredDate: acqDateStr,
+                                age: ageVal,
                                 productName: name,
                                 costPrice: parseFloat(String(getVal(row, costIdx)).replace(/[^0-9.]/g, '')) || 0,
                                 expectedSalesPrice: parseFloat(String(getVal(row, saleIdx)).replace(/[^0-9.]/g, '')) || 0,
@@ -760,7 +781,6 @@
                     }, {});
                 },
 
-                // Strip currency symbols/commas and parse a numeric value from sheet text
                 parseNum(val) {
                     return parseFloat(String(val).replace(/[^0-9.-]+/g, '')) || 0;
                 },
@@ -806,7 +826,6 @@
                     return this.products.reduce((max, p) => this.parseNum(p.mrp) > this.parseNum(max.mrp) ? p : max, this.products[0]);
                 },
 
-                // Bucketed price distribution used for the histogram chart
                 get priceRangeBuckets() {
                     const buckets = [
                         { label: '< 500', min: 0, max: 500, count: 0 },
@@ -834,6 +853,7 @@
                             totalMrp,
                             totalCost,
                             avgMrp: items.length ? totalMrp / items.length : 0,
+                            avgCost: items.length ? totalCost / items.length : 0,
                             margin: totalMrp > 0 ? ((totalMrp - totalCost) / totalMrp) * 100 : 0
                         };
                     }).sort((a, b) => b.count - a.count);
@@ -844,21 +864,24 @@
                         const items = this.products.filter(p => p.brand === name);
                         const totalMrp = items.reduce((s, i) => s + this.parseNum(i.mrp), 0);
                         const totalCost = items.reduce((s, i) => s + this.parseNum(i.cost), 0);
+                        const count = items.length;
+                        const avgMrp = count ? totalMrp / count : 0;
+                        const avgCost = count ? totalCost / count : 0;
                         return {
                             name,
-                            count: items.length,
+                            count,
                             totalMrp,
-                            avgMrp: items.length ? totalMrp / items.length : 0,
-                            margin: totalMrp > 0 ? ((totalMrp - totalCost) / totalMrp) * 100 : 0
+                            totalCost,
+                            avgMrp,
+                            avgCost,
+                            margin: avgMrp > 0 ? ((avgMrp - avgCost) / avgMrp) * 100 : 0
                         };
-                    }).sort((a, b) => b.totalMrp - a.totalMrp);
+                    }).sort((a, b) => b.count - a.count);
                 },
 
-                // Chart generation logic
                 renderCharts() {
                     if (this.products.length === 0) return;
 
-                    // Aggregate Data
                     const brandCounts = {};
                     const typeCounts = {};
                     
@@ -867,13 +890,11 @@
                         typeCounts[p.type] = (typeCounts[p.type] || 0) + 1;
                     });
 
-                    // Destroy old charts to prevent Canvas duplication overlap errors
                     if (brandChartInstance) brandChartInstance.destroy();
                     if (typeChartInstance) typeChartInstance.destroy();
                     if (priceRangeChartInstance) priceRangeChartInstance.destroy();
                     if (valueByBrandChartInstance) valueByBrandChartInstance.destroy();
 
-                    // Render Brand Chart (Bar)
                     const ctxBrand = document.getElementById('brandChart').getContext('2d');
                     brandChartInstance = new Chart(ctxBrand, {
                         type: 'bar',
@@ -888,7 +909,6 @@
                         options: { responsive: true }
                     });
 
-                    // Render Type Chart (Pie)
                     const ctxType = document.getElementById('typeChart').getContext('2d');
                     typeChartInstance = new Chart(ctxType, {
                         type: 'doughnut',
@@ -902,7 +922,6 @@
                         options: { responsive: true }
                     });
 
-                    // Render Price Range Chart (Histogram)
                     const buckets = this.priceRangeBuckets;
                     const ctxPrice = document.getElementById('priceRangeChart').getContext('2d');
                     priceRangeChartInstance = new Chart(ctxPrice, {
@@ -918,7 +937,6 @@
                         options: { responsive: true }
                     });
 
-                    // Render Retail vs Cost Value by Brand Chart (Grouped Bar)
                     const brands = this.brandStats;
                     const ctxValue = document.getElementById('valueByBrandChart').getContext('2d');
                     valueByBrandChartInstance = new Chart(ctxValue, {
@@ -927,7 +945,7 @@
                             labels: brands.map(b => b.name),
                             datasets: [
                                 { label: 'Retail Value', data: brands.map(b => b.totalMrp), backgroundColor: '#3b82f6' },
-                                { label: 'Cost Value', data: brands.map(b => this.products.filter(p => p.brand === b.name).reduce((s, p) => s + this.parseNum(p.cost), 0)), backgroundColor: '#ef4444' }
+                                { label: 'Cost Value', data: brands.map(b => b.totalCost), backgroundColor: '#ef4444' }
                             ]
                         },
                         options: { responsive: true }
