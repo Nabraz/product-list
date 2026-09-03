@@ -11,10 +11,14 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
         :root {
-            --primary: #2563eb;
-            --primary-hover: #1d4ed8;
-            --bg-color: #e5e7eb;
-            --text-main: #111;
+            --primary: #1d4ed8;
+            --primary-hover: #1e40af;
+            --bg-color: #dbe2ea;
+            --text-main: #111827;
+            --text-muted: #374151;
+            --line-strong: #111827;
+            --line-soft: #94a3b8;
+            --surface: #ffffff;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -24,7 +28,7 @@
             background: var(--bg-color);
             color: var(--text-main);
             line-height: 1.5;
-            padding: 20px;
+            padding: 14px;
         }
 
         /* ========== TAB NAVIGATION ========== */
@@ -32,23 +36,26 @@
             max-width: 1400px;
             margin: 0 auto 20px auto;
             display: flex;
+            flex-wrap: wrap;
             gap: 10px;
-            background: white;
+            background: var(--surface);
             padding: 10px;
             border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 14px rgba(15,23,42,0.08);
+            border: 1px solid rgba(148,163,184,0.35);
         }
 
         .tab-btn {
             padding: 12px 24px;
             border: none;
             background: #f3f4f6;
-            color: #4b5563;
+            color: var(--text-muted);
             border-radius: 8px;
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            flex: 1 1 220px;
         }
 
         .tab-btn:hover { background: #e5e7eb; }
@@ -66,24 +73,25 @@
             max-width: 1400px;
             margin: 0 auto;
             display: grid;
-            grid-template-columns: 320px 1fr;
+            grid-template-columns: 1fr;
             gap: 20px;
             align-items: start;
         }
 
         /* ========== PANELS ========== */
         .controls {
-            background: white;
+            background: var(--surface);
             border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            padding: 16px;
+            box-shadow: 0 6px 18px rgba(15,23,42,0.08);
+            border: 1px solid rgba(148,163,184,0.35);
         }
 
         .controls h2 {
             font-size: 17px;
             margin-bottom: 16px;
-            color: #111;
-            border-bottom: 2px solid #e5e7eb;
+            color: #0f172a;
+            border-bottom: 2px solid #cbd5e1;
             padding-bottom: 8px;
         }
 
@@ -98,15 +106,17 @@
         .form-group input, .form-group textarea {
             width: 100%;
             padding: 9px 11px;
-            border: 1px solid #ccc;
+            border: 1px solid #94a3b8;
             border-radius: 6px;
             font-size: 13px;
             font-family: inherit;
+            color: var(--text-main);
+            background: #fff;
         }
         .form-group input:focus, .form-group textarea:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+            box-shadow: 0 0 0 3px rgba(29,78,216,0.18);
         }
 
         .btn-group {
@@ -133,8 +143,8 @@
         .btn-success:hover { background: #15803d; }
         .btn-dark { background: #1f2937; color: white; }
         .btn-dark:hover { background: #111827; }
-        .btn-secondary { background: #e5e7eb; color: #111; }
-        .btn-secondary:hover { background: #d1d5db; }
+        .btn-secondary { background: #cbd5e1; color: #0f172a; }
+        .btn-secondary:hover { background: #94a3b8; }
         .btn-warning { background: #f59e0b; color: white; }
         .btn-warning:hover { background: #d97706; }
         .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
@@ -149,7 +159,7 @@
         }
         .modal-overlay.active { display: flex; }
         .modal-content {
-            background: white; border-radius: 12px; width: 95%; max-width: 1180px;
+            background: white; border-radius: 12px; width: min(95%, 1180px); max-width: 1180px;
             max-height: 85vh; display: flex; flex-direction: column;
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
         }
@@ -162,9 +172,9 @@
         .modal-body { padding: 0 20px 18px; overflow: auto; }
 
         .db-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
-        .db-table th, .db-table td { padding: 6px 9px; border-bottom: 1px solid #eef0f2; border-right: 1px solid #f2f3f5; text-align: left; white-space: nowrap; }
+        .db-table th, .db-table td { padding: 6px 9px; border-bottom: 1px solid #dbe2ea; border-right: 1px solid #e2e8f0; text-align: left; white-space: nowrap; }
         .db-table th:last-child, .db-table td:last-child { border-right: none; }
-        .db-table th { background: #f9fafb; font-weight: 700; color: #4b5563; position: sticky; top: 0; z-index: 1; }
+        .db-table th { background: #e2e8f0; font-weight: 700; color: #1f2937; position: sticky; top: 0; z-index: 1; }
         .db-table td.wrap-cell { white-space: normal; max-width: 220px; }
         .db-table td.num, .db-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
         .db-table td.strong-cell { font-weight: 700; color: #111; }
@@ -174,10 +184,12 @@
 
         /* ========== PREVIEW ========== */
         .preview-wrapper {
-            background: white;
+            background: var(--surface);
             border-radius: 12px;
-            padding: 18px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            padding: 14px;
+            box-shadow: 0 6px 18px rgba(15,23,42,0.08);
+            border: 1px solid rgba(148,163,184,0.35);
+            min-width: 0;
         }
 
         .preview-header {
@@ -191,29 +203,34 @@
 
         /* ========== INK-FRIENDLY DOCUMENT ========== */
         .document {
-            width: 210mm;
+            width: 100%;
+            max-width: 210mm;
             background: #fff;
-            padding: 13mm 15mm;
+            padding: 22px 16px;
             margin: 0 auto;
-            box-shadow: 0 0 12px rgba(0,0,0,0.1);
+            box-shadow: 0 0 12px rgba(15,23,42,0.08);
             font-size: 13px;
-            color: #111;
+            color: #0f172a;
+            border: 1px solid #cbd5e1;
+            overflow: hidden;
         }
         
         .doc-receipt { min-height: 148.5mm; }
 
         .d-header { text-align: center; margin-bottom: 4px; }
-        .d-company { font-size: 18.5px; font-weight: 700; color: #000; }
-        .d-sub { font-size: 12.5px; color: #222; margin-top: 2px; }
+        .d-company { font-size: 17px; font-weight: 700; color: #000; line-height: 1.3; }
+        .d-sub { font-size: 12px; color: #111; margin-top: 2px; }
 
         .d-pan {
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-wrap: wrap;
             gap: 7px;
             margin: 11px 0 7px;
             font-size: 12.5px;
             font-weight: 500;
+            text-align: center;
         }
 
         .pan-boxes {
@@ -238,43 +255,43 @@
         /* Matches precise spacing in image_11a184.png */
         .d-meta {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px 30px;
+            grid-template-columns: 1fr;
+            gap: 12px;
             margin: 0 0 20px;
-            padding: 18px 20px;
-            border: 1px solid #d1d5db;
+            padding: 14px;
+            border: 1px solid var(--line-soft);
             border-radius: 8px;
             background: #fff;
         }
-        .d-info-row { display: flex; font-size: 13px; align-items: center; }
-        .d-label { width: 118px; font-weight: 600; color: #000; }
+        .d-info-row { display: flex; flex-direction: column; gap: 2px; font-size: 13px; align-items: flex-start; }
+        .d-label { width: auto; font-weight: 700; color: #000; }
         .d-value { flex: 1; color: #111; }
 
         /* Tables */
         table.d-table, table.emi-table {
-            width: 100%; border-collapse: collapse; margin: 12px 0 16px;
+            width: 100%; border-collapse: collapse; margin: 12px 0 16px; table-layout: fixed;
         }
-        .d-table th, .d-table td { border: 1px solid #999; padding: 8px 9px; font-size: 13px; }
-        .d-table th { background: #f3f4f6; color: #111; font-weight: 600; text-align: left; }
+        .d-table th, .d-table td { border: 1px solid var(--line-strong); padding: 8px 9px; font-size: 13px; word-break: break-word; }
+        .d-table th { background: #e5e7eb; color: #111; font-weight: 700; text-align: left; }
         .d-table .sn { width: 48px; text-align: center; }
         .d-table .amt { width: 125px; text-align: right; white-space: nowrap; }
-        .d-table .total-row td { font-weight: 700; background: #f9fafb; color: #000; }
+        .d-table .total-row td { font-weight: 700; background: #e5e7eb; color: #000; }
 
         /* EMI Specific Table matching image_11f6c3.png */
         .emi-greeting { font-size: 13px; margin-bottom: 12px; line-height: 1.6; }
-        .emi-table th, .emi-table td { border: 1px solid #111; padding: 10px; font-size: 13.5px; }
-        .emi-table th { font-weight: 700; color: #000; text-align: left; background: #f3f4f6; }
+        .emi-table th, .emi-table td { border: 1px solid #111; padding: 10px; font-size: 13.5px; word-break: break-word; }
+        .emi-table th { font-weight: 700; color: #000; text-align: left; background: #e5e7eb; }
         .emi-table .label-col { font-weight: 600; width: 40%; }
         .emi-table .val-col { width: 60%; }
 
         .d-words { font-size: 13px; margin: 14px 0 28px; color: #111; }
         .d-words strong { text-decoration: underline; text-underline-offset: 2px; }
 
-        .d-note { margin-top: 12px; font-size: 11.5px; color: #374151; line-height: 1.55; }
-        .d-footer-note { margin-top: 38px; padding-top: 8px; border-top: 1px solid #d1d5db; font-size: 10.5px; color: #6b7280; text-align: center; }
+        .d-note { margin-top: 12px; font-size: 11.5px; color: #111827; line-height: 1.55; }
+        .d-footer-note { margin-top: 38px; padding-top: 8px; border-top: 1px solid #94a3b8; font-size: 10.5px; color: #374151; text-align: center; }
         
         .d-signature { display: flex; justify-content: flex-end; margin-top: 40px; }
-        .sig-box { text-align: center; min-width: 200px; }
+        .sig-box { text-align: center; min-width: min(200px, 100%); width: min(240px, 100%); }
         .sig-line { border-top: 1px solid #333; margin: 38px 0 6px; }
         .sig-label { font-size: 12.5px; font-weight: 500; }
         .sig-name { font-size: 13px; margin-top: 3px; font-weight: 600; }
@@ -291,24 +308,114 @@
         .items-footer { display:flex; justify-content:space-between; align-items:center; margin-top:10px; }
         .add-item-btn { background:#fff; color:var(--primary); border:1px solid #93c5fd; padding:7px 10px; font-size:12px; border-radius:4px; cursor:pointer;}
 
+        @media (min-width: 960px) {
+            body {
+                padding: 20px;
+            }
+            .tabs-container {
+                flex-wrap: nowrap;
+            }
+            .app-grid {
+                grid-template-columns: 320px minmax(0, 1fr);
+            }
+            .controls {
+                position: sticky;
+                top: 20px;
+                padding: 20px;
+            }
+            .preview-wrapper {
+                padding: 18px;
+            }
+            .document {
+                padding: 13mm 15mm;
+            }
+            .d-company {
+                font-size: 18.5px;
+            }
+            .d-sub {
+                font-size: 12.5px;
+            }
+            .d-meta {
+                grid-template-columns: 1fr 1fr;
+                gap: 15px 30px;
+                padding: 18px 20px;
+            }
+            .d-info-row {
+                flex-direction: row;
+                align-items: center;
+            }
+            .d-label {
+                width: 118px;
+            }
+        }
+
         @media print {
             html, body { background: #fff !important; }
-            body * { visibility: hidden; }
-            .active .document, .active .document * { visibility: visible; }
+            body { padding: 0 !important; }
+            .tabs-container,
+            .modal-overlay,
+            .controls,
+            .preview-header,
+            .items-editor {
+                display: none !important;
+            }
+            .tab-content {
+                display: none !important;
+            }
+            .tab-content.active {
+                display: block !important;
+            }
+            .tab-content.active .app-grid,
+            .tab-content.active .preview-wrapper {
+                display: block !important;
+            }
+            .tab-content.active .preview-wrapper {
+                padding: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+                background: transparent !important;
+            }
             .document {
-                position: absolute; left: 0; top: 0; width: 210mm;
-                margin: 0; padding: 12mm 14mm; box-shadow: none;
+                position: static;
+                left: auto;
+                top: auto;
+                width: 100%;
+                max-width: none;
+                margin: 0;
+                padding: 12mm 14mm;
+                box-shadow: none;
+                border: none;
+                overflow: visible;
             }
             /* Force the header/total-row highlight colors to print even when
                the browser's "Background graphics" print option is left unchecked,
                so the sheet stays plain white everywhere except text and tables. */
-            .active .document,
-            .active .document * {
+            .document,
+            .document * {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
                 color-adjust: exact !important;
             }
-            @page { size: A4; margin: 0; }
+            .d-meta {
+                grid-template-columns: 1fr 1fr !important;
+                gap: 15px 30px !important;
+            }
+            .d-info-row {
+                flex-direction: row !important;
+                align-items: center !important;
+            }
+            .d-label {
+                width: 118px !important;
+            }
+            .document,
+            .d-meta,
+            .d-table,
+            .emi-table,
+            .d-signature {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+            @page { size: A4; margin: 8mm; }
         }
     </style>
 </head>
