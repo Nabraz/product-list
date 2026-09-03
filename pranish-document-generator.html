@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pranish Apple Store - Document Generator</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/nepali-date-converter@3.4.0/dist/nepali-date-converter.umd.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #e5e7eb;
+            --text-main: #111;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding: 20px;
+        }
+
+        /* ========== TAB NAVIGATION ========== */
+        .tabs-container {
+            max-width: 1400px;
+            margin: 0 auto 20px auto;
+            display: flex;
+            gap: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            background: #f3f4f6;
+            color: #4b5563;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover { background: #e5e7eb; }
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 10px rgba(37,99,235,0.2);
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* ========== LAYOUT ========== */
+        .app-grid {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        /* ========== PANELS ========== */
+        .controls {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .controls h2 {
+            font-size: 17px;
+            margin-bottom: 16px;
+            color: #111;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 8px;
+        }
+
+        .form-group { margin-bottom: 13px; }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 9px 11px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: inherit;
+        }
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+            margin-top: 18px;
+        }
+
+        button {
+            padding: 11px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13.5px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: 0.2s;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-success { background: #16a34a; color: white; }
+        .btn-success:hover { background: #15803d; }
+        .btn-dark { background: #1f2937; color: white; }
+        .btn-dark:hover { background: #111827; }
+        .btn-secondary { background: #e5e7eb; color: #111; }
+        .btn-secondary:hover { background: #d1d5db; }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-warning:hover { background: #d97706; }
+        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+        .btn-outline:hover { background: #eff6ff; }
+
+        /* ========== MODAL DB LIST ========== */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            display: none; align-items: center; justify-content: center;
+            z-index: 9999;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: white; border-radius: 12px; width: 95%; max-width: 1180px;
+            max-height: 85vh; display: flex; flex-direction: column;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            padding: 16px 20px; border-bottom: 1px solid #e5e7eb;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .modal-header h2 { font-size: 18px; margin: 0; }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; color: #666; width: auto; }
+        .modal-body { padding: 0 20px 18px; overflow: auto; }
+
+        .db-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+        .db-table th, .db-table td { padding: 6px 9px; border-bottom: 1px solid #eef0f2; border-right: 1px solid #f2f3f5; text-align: left; white-space: nowrap; }
+        .db-table th:last-child, .db-table td:last-child { border-right: none; }
+        .db-table th { background: #f9fafb; font-weight: 700; color: #4b5563; position: sticky; top: 0; z-index: 1; }
+        .db-table td.wrap-cell { white-space: normal; max-width: 220px; }
+        .db-table td.num, .db-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+        .db-table td.strong-cell { font-weight: 700; color: #111; }
+        .db-table tbody tr:hover td { background: #f3f4f6; }
+        .action-btn { background: none; border: none; padding: 6px; cursor: pointer; font-size: 15px; color: var(--primary); width: auto; }
+        .action-btn:hover { transform: scale(1.1); }
+
+        /* ========== PREVIEW ========== */
+        .preview-wrapper {
+            background: white;
+            border-radius: 12px;
+            padding: 18px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+        .preview-header h2 { font-size: 16px; }
+        .status-badge { font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 4px; }
+
+        /* ========== INK-FRIENDLY DOCUMENT ========== */
+        .document {
+            width: 210mm;
+            background: #fff;
+            padding: 13mm 15mm;
+            margin: 0 auto;
+            box-shadow: 0 0 12px rgba(0,0,0,0.1);
+            font-size: 13px;
+            color: #111;
+        }
+        
+        .doc-receipt { min-height: 148.5mm; }
+
+        .d-header { text-align: center; margin-bottom: 4px; }
+        .d-company { font-size: 18.5px; font-weight: 700; color: #000; }
+        .d-sub { font-size: 12.5px; color: #222; margin-top: 2px; }
+
+        .d-pan {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            margin: 11px 0 7px;
+            font-size: 12.5px;
+            font-weight: 500;
+        }
+
+        .pan-boxes {
+            display: inline-flex;
+            border: 1px solid #333;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .pan-digit {
+            width: 19px; height: 19px; border-right: 1px solid #333;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700;
+        }
+        .pan-digit:last-child { border-right: none; }
+
+        .d-title {
+            text-align: center; font-size: 16.5px; font-weight: 700;
+            margin: 14px 0 13px; text-decoration: underline;
+            text-underline-offset: 3px; color: #000;
+        }
+
+        /* Matches precise spacing in image_11a184.png */
+        .d-meta {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px 30px;
+            margin: 0 0 20px;
+            padding: 18px 20px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: #fff;
+        }
+        .d-info-row { display: flex; font-size: 13px; align-items: center; }
+        .d-label { width: 118px; font-weight: 600; color: #000; }
+        .d-value { flex: 1; color: #111; }
+
+        /* Tables */
+        table.d-table, table.emi-table {
+            width: 100%; border-collapse: collapse; margin: 12px 0 16px;
+        }
+        .d-table th, .d-table td { border: 1px solid #999; padding: 8px 9px; font-size: 13px; }
+        .d-table th { background: #f3f4f6; color: #111; font-weight: 600; text-align: left; }
+        .d-table .sn { width: 48px; text-align: center; }
+        .d-table .amt { width: 125px; text-align: right; white-space: nowrap; }
+        .d-table .total-row td { font-weight: 700; background: #f9fafb; color: #000; }
+
+        /* EMI Specific Table matching image_11f6c3.png */
+        .emi-greeting { font-size: 13px; margin-bottom: 12px; line-height: 1.6; }
+        .emi-table th, .emi-table td { border: 1px solid #111; padding: 10px; font-size: 13.5px; }
+        .emi-table th { font-weight: 700; color: #000; text-align: left; background: #f3f4f6; }
+        .emi-table .label-col { font-weight: 600; width: 40%; }
+        .emi-table .val-col { width: 60%; }
+
+        .d-words { font-size: 13px; margin: 14px 0 28px; color: #111; }
+        .d-words strong { text-decoration: underline; text-underline-offset: 2px; }
+
+        .d-note { margin-top: 12px; font-size: 11.5px; color: #374151; line-height: 1.55; }
+        .d-footer-note { margin-top: 38px; padding-top: 8px; border-top: 1px solid #d1d5db; font-size: 10.5px; color: #6b7280; text-align: center; }
+        
+        .d-signature { display: flex; justify-content: flex-end; margin-top: 40px; }
+        .sig-box { text-align: center; min-width: 200px; }
+        .sig-line { border-top: 1px solid #333; margin: 38px 0 6px; }
+        .sig-label { font-size: 12.5px; font-weight: 500; }
+        .sig-name { font-size: 13px; margin-top: 3px; font-weight: 600; }
+
+        /* ========== ITEM EDITOR ========== */
+        .items-editor { margin-top: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; }
+        .items-editor-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+        .items-editor-head h3 { font-size:14px; margin:0; }
+        .item-editor-table { width:100%; border-collapse:collapse; background:#fff; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden; }
+        .item-editor-table th { background:#f1f5f9; font-size:11px; font-weight:700; padding:8px 7px; text-align:left; }
+        .item-editor-table td { padding:6px; border-bottom:1px solid #e5e7eb; }
+        .item-editor-table input { width:100%; border:1px solid #d1d5db; border-radius:5px; padding:7px 8px; font-size:12px; }
+        .item-delete { width:30px; height:30px; border-radius:6px; background:#fee2e2; color:#b91c1c; font-size:15px; border:none; cursor:pointer;}
+        .items-footer { display:flex; justify-content:space-between; align-items:center; margin-top:10px; }
+        .add-item-btn { background:#fff; color:var(--primary); border:1px solid #93c5fd; padding:7px 10px; font-size:12px; border-radius:4px; cursor:pointer;}
+
+        @media print {
+            html, body { background: #fff !important; }
+            body * { visibility: hidden; }
+            .active .document, .active .document * { visibility: visible; }
+            .document {
+                position: absolute; left: 0; top: 0; width: 210mm;
+                margin: 0; padding: 12mm 14mm; box-shadow: none;
+            }
+            /* Force the header/total-row highlight colors to print even when
+               the browser's "Background graphics" print option is left unchecked,
+               so the sheet stays plain white everywhere except text and tables. */
+            .active .document,
+            .active .document * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+            @page { size: A4; margin: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="tabs-container">
+        <button class="tab-btn active" onclick="switchTab('receipt', this)">Receipt Generator</button>
+        <button class="tab-btn" onclick="switchTab('quotation', this)">Quotation Generator</button>
+        <button class="tab-btn" onclick="switchTab('emi', this)">Samsung EMI Quotation</button>
+    </div>
+
+    <!-- DB MODAL -->
+    <div class="modal-overlay" id="dbModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Saved Documents</h2>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <table class="db-table">
+                    <thead><tr id="modalThead"></tr></thead>
+                    <tbody id="modalTbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- RECEIPT TAB -->
+    <div id="receipt-tab" class="tab-content active">
+        <div class="app-grid">
+            <div class="controls">
+                <h2>Receipt Details</h2>
+                <button class="btn-outline" style="margin-bottom:15px; width:100%;" onclick="openModal('receipt')">📁 View Saved Receipts</button>
+                <div class="form-group"><label>Voucher No.</label><input type="text" id="r_voucher" class="track-r"></div>
+                <div class="form-group"><label>Date (AD)</label><input type="date" id="r_date" class="track-r"></div>
+                <div class="form-group"><label>Name</label><input type="text" id="r_name" placeholder="Full Name" class="track-r"></div>
+                <div class="form-group"><label>Contact Number</label><input type="text" id="r_contact" placeholder="98XXXXXXXX" class="track-r"></div>
+                <div class="form-group"><label>Address</label><input type="text" id="r_address" placeholder="City, District" class="track-r"></div>
+                <div class="form-group"><label>Received By</label><input type="text" id="r_staff" placeholder="Staff name" oninput="cacheStaffName(this.value)" class="track-r"></div>
+
+                <div class="btn-group" id="r_create_btns">
+                    <button class="btn-success" onclick="saveDocument('receipt')">Save Receipt</button>
+                    <button class="btn-dark" onclick="window.print()">Print / PDF</button>
+                    <button class="btn-secondary" onclick="newDocument('receipt')">+ Clear & Start New</button>
+                </div>
+
+                <div class="btn-group" id="r_edit_btns" style="display:none;">
+                    <button class="btn-primary" onclick="saveDocument('receipt')">Update Existing Receipt</button>
+                    <button class="btn-warning" onclick="saveAsNew('receipt')">Save as New</button>
+                    <button class="btn-dark" onclick="window.print()">Print / PDF</button>
+                    <button class="btn-secondary" onclick="newDocument('receipt')">+ Clear & Start New</button>
+                </div>
+            </div>
+
+            <div class="preview-wrapper">
+                <div class="preview-header">
+                    <h2>Live Preview</h2>
+                    <span id="r_badge" class="status-badge"></span>
+                </div>
+                <div class="items-editor">
+                    <div class="items-editor-head">
+                        <div><h3>Receipt Details</h3></div>
+                    </div>
+                    <div id="r_itemsEditor"></div>
+                </div>
+                <div class="document doc-receipt">
+                    <div class="d-header">
+                        <div class="d-company">Pranish Apple Store and Service Centre Pvt. Ltd.</div>
+                        <div class="d-sub">KamalPokhari | Phone No. : 9708080830</div>
+                        <div class="d-sub">Email: Pranishstorejawalakhel@gmail.com</div>
+                    </div>
+                    <div class="d-pan">
+                        <span>PAN/ VAT No.</span>
+                        <div class="pan-boxes">
+                            <div class="pan-digit">6</div><div class="pan-digit">1</div><div class="pan-digit">9</div>
+                            <div class="pan-digit">8</div><div class="pan-digit">8</div><div class="pan-digit">4</div>
+                            <div class="pan-digit">2</div><div class="pan-digit">7</div><div class="pan-digit">5</div>
+                        </div>
+                    </div>
+                    <div class="d-title">Cash Receipt Voucher</div>
+                    <div class="d-info d-meta">
+                        <div class="d-info-row"><div class="d-label">Voucher No:</div><div class="d-value" id="prev_r_voucher">—</div></div>
+                        <div class="d-info-row"><div class="d-label">Date:</div><div class="d-value" id="prev_r_date">—</div></div>
+                        <div class="d-info-row"><div class="d-label">Received From:</div><div class="d-value" id="prev_r_name">—</div></div>
+                        <div class="d-info-row"><div class="d-label">Contact No:</div><div class="d-value" id="prev_r_contact">—</div></div>
+                        <div class="d-info-row"><div class="d-label">Address:</div><div class="d-value" id="prev_r_address">—</div></div>
+                    </div>
+                    <table class="d-table">
+                        <thead><tr><th class="sn">SN</th><th>Receipt For</th><th class="amt">Amount (NPR)</th></tr></thead>
+                        <tbody id="prev_r_items"></tbody>
+                    </table>
+                    <div class="d-words"><strong>Amount in Words:</strong> <span id="prev_r_words">Zero Rupees Only.</span></div>
+                    <div class="d-footer-note">This receipt is computer generated and is valid with authorized signature and stamp.</div>
+                    <div class="d-signature">
+                        <div class="sig-box">
+                            <div class="sig-line"></div>
+                            <div class="sig-label">Received By</div>
+                            <div class="sig-name" id="prev_r_staff">—</div>
+                            <div style="margin-top:16px;font-size:12px;">Authorized Signature & Stamps</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUOTATION TAB -->
+    <div id="quotation-tab" class="tab-content">
+        <div class="app-grid">
+            <div class="controls">
+                <h2>Quotation Details</h2>
+                <button class="btn-outline" style="margin-bottom:15px; width:100%;" onclick="openModal('quotation')">📁 View Saved Quotations</button>
+                <div class="form-group"><label>Quotation No.</label><input type="text" id="q_voucher" class="track-q"></div>
+                <div class="form-group"><label>Date (AD)</label><input type="date" id="q_date" class="track-q"></div>
+                <div class="form-group"><label>Name</label><input type="text" id="q_name" placeholder="Full Name" class="track-q"></div>
+                <div class="form-group"><label>PAN</label><input type="text" id="q_pan" placeholder="Optional" class="track-q"></div>
+                <div class="form-group"><label>Contact Number</label><input type="text" id="q_contact" placeholder="98XXXXXXXX" class="track-q"></div>
+                <div class="form-group"><label>Address</label><input type="text" id="q_address" placeholder="City, District" class="track-q"></div>
+                <div class="form-group"><label>Prepared By</label><input type="text" id="q_staff" placeholder="Staff name" oninput="cacheStaffName(this.value)" class="track-q"></div>
+
+                <div class="btn-group" id="q_create_btns">
+                    <button class="btn-success" onclick="saveDocument('quotation')">Save Quotation</button>
+                    <button class="btn-dark" onclick="window.print()">Print / PDF</button>
+                    <button class="btn-secondary" onclick="newDocument('quotation')">+ Clear & Start New</button>
+                </div>
+
+                <div class="btn-group" id="q_edit_btns" style="display:none;">
+                    <button class="btn-primary" onclick="saveDocument('quotation')">Update Quotation</button>
+                    <button class="btn-warning" onclick="saveAsNew('quotation')">Save as New</button>
+                    <button class="btn-dark" onclick="window.print()">Print / PDF</button>
+                    <button class="btn-secondary" onclick="newDocument('quotation')">+ Clear & Start New</button>
+                </div>
+            </div>
+
+            <div class="preview-wrapper">
+                <div class="preview-header">
+                    <h2>Live Preview</h2>
+                    <span id="q_badge" class="status-badge"></span>
+                </div>
+                <div class="items-editor">
+                    <div class="items-editor-head"><div><h3>Quotation Items</h3></div></div>
+                    <div id="q_itemsEditor"></div>
+                </div>
+                <div class="document doc-quotation">
+                    <div class="d-header">
+                        <div class="d-company">Pranish Apple Store and Service Centre Pvt. Ltd.</div>
+                        <div class="d-sub">KamalPokhari | Phone No. : 9708080830</div>
+                        <div class="d-sub">Email: Pranishstorejawalakhel@gmail.com</div>
+                    </div>
+                    <div class="d-pan">
+                        <span>PAN/ VAT No.</span>
+                        <div class="pan-boxes">
+                            <div class="pan-digit">6</div><div class="pan-digit">1</div><div class="pan-digit">9</div>
+                            <div class="pan-digit">8</div><div class="pan-digit">8</div><div class="pan-digit">4</div>
+                            <div class="pan-digit">2</div><div class="pan-digit">7</div><div class="pan-digit">5</div>
+                        </div>
+                    </div>
+                    <div class="d-title">Quotation / Estimate</div>
+                    <div class="d-info d-meta">
+                        <div class="d-info-row"><div class="d-label">Quotation No:</div><div class="d-value" id="prev_q_voucher">—</div></div>
+                        <div class="d-info-row"><div class="d-label">Date:</div><div class="d-value" id="prev_q_date">—</div></div>
+                        <div class="d-info-row"><div class="d-label">Name:</div><div class="d-value" id="prev_q_name">—</div></div>
+                        <div class="d-info-row"><div class="d-label">PAN:</div><div class="d-value" id="prev_q_pan">—</div></div>
+                        <div class="d-info-row"><div class="d-label">Contact No:</div><div class="d-value" id="prev_q_contact">—</div></div>
+                        <div class="d-info-row"><div class="d-label">Address:</div><div class="d-value" id="prev_q_address">—</div></div>
+                    </div>
+                    <table class="d-table">
+                        <thead><tr><th class="sn">SN</th><th>Description</th><th class="qty">Qty</th><th class="rate">Rate (NPR)</th><th class="amt">Amount (NPR)</th></tr></thead>
+                        <tbody id="prev_q_items"></tbody>
+                    </table>
+                    <div class="d-words"><strong>Amount in Words:</strong> <span id="prev_q_words">Zero Rupees Only.</span></div>
+                    <div class="d-note"><strong>Quotation Terms:</strong> Prices are quoted in Nepalese Rupees. Final billing may vary if specifications change.</div>
+                    <div class="d-footer-note">This quotation is computer generated and is subject to the terms agreed with the customer.</div>
+                    <div class="d-signature">
+                        <div class="sig-box">
+                            <div class="sig-line"></div>
+                            <div class="sig-label">Prepared By</div>
+                            <div class="sig-name" id="prev_q_staff">—</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EMI TAB -->
+    <div id="emi-tab" class="tab-content">
+        <div class="app-grid">
+            <div class="controls">
+                <h2>EMI Quotation Details</h2>
+                <button class="btn-outline" style="margin-bottom:15px; width:100%;" onclick="openModal('emi')">📁 View Saved EMI Quotes</button>
+                <div class="form-group"><label>Quotation No.</label><input type="text" id="e_voucher" class="track-e"></div>
+                <div class="form-group"><label>Date (AD)</label><input type="date" id="e_date" class="track-e"></div>
+                <div class="form-group"><label>Customer Name</label><input type="text" id="e_name" class="track-e"></div>
+                <div class="form-group"><label>Customer PAN</label><input type="text" id="e_pan" class="track-e"></div>
+                <div class="form-group"><label>Contact Number</label><input type="text" id="e_contact" class="track-e"></div>
+                <div class="form-group"><label>Address</label><input type="text" id="e_address" class="track-e"></div>
+                
+                <h2 style="margin-top:20px;">Product & EMI</h2>
+                <div class="form-group"><label>Model Name</label><input type="text" id="e_model" class="track-e"></div>
+                <div class="form-group"><label>Storage (GB)</label><input type="text" id="e_storage" class="track-e"></div>
+                <div class="form-group"><label>IMEI Number</label><input type="text" id="e_imei" class="track-e"></div>
+                <div class="form-group"><label>Cost Price (Rs.)</label><input type="number" id="e_cost" class="track-e"></div>
+                <div class="form-group"><label>Discount (Rs.)</label><input type="number" id="e_discount" class="track-e" value="0"></div>
+                <div class="form-group"><label>Downpayment (%)</label><input type="number" id="e_dp_pct" class="track-e" placeholder="e.g. 10"></div>
+                <div class="form-group"><label>Tenure (Months)</label><input type="number" id="e_tenure" class="track-e" placeholder="12"></div>
+                
+                <div class="form-group" style="margin-top:15px;"><label>Prepared By</label><input type="text" id="e_staff" oninput="cacheStaffName(this.value)" class="track-e"></div>
+
+                <div class="btn-group" id="e_create_btns">
+                    <button class="btn-success" onclick="saveDocument('emi')">Save EMI Quotation</button>
+                    <button class="btn-dark" onclick="window.print()">Print / PDF</button>
+                    <button class="btn-secondary" onclick="newDocument('emi')">+ Clear & Start New</button>
+                </div>
+
+                <div class="btn-group" id="e_edit_btns" style="display:none;">
+                    <button class="btn-primary" onclick="saveDocument('emi')">Update EMI Quotation</button>
+                    <button class="btn-warning" onclick="saveAsNew('emi')">Save as New</button>
+                    <button class="btn-dark" onclick="window.print()">Print / PDF</button>
+                    <button class="btn-secondary" onclick="newDocument('emi')">+ Clear & Start New</button>
+                </div>
+            </div>
+
+            <div class="preview-wrapper">
+                <div class="preview-header">
+                    <h2>Live Preview</h2>
+                    <span id="e_badge" class="status-badge"></span>
+                </div>
+                <div class="document doc-emi">
+                    <div class="d-header">
+                        <div class="d-company">Pranish Apple Store and Service Centre Pvt. Ltd.</div>
+                        <div class="d-sub">KamalPokhari | Phone No. : 9708080830</div>
+                        <div class="d-sub">Email: Pranishstorejawalakhel@gmail.com</div>
+                    </div>
+                    <div class="d-pan">
+                        <span>PAN/ VAT No.</span>
+                        <div class="pan-boxes">
+                            <div class="pan-digit">6</div><div class="pan-digit">1</div><div class="pan-digit">9</div>
+                            <div class="pan-digit">8</div><div class="pan-digit">8</div><div class="pan-digit">4</div>
+                            <div class="pan-digit">2</div><div class="pan-digit">7</div><div class="pan-digit">5</div>
+                        </div>
+                    </div>
+                    <div class="d-title">Quotation / Estimate</div>
+                    <div class="d-info d-meta">
+                        <div class="d-info-row"><div class="d-label">Quotation No:</div><div class="d-value" id="prev_e_voucher">—</div></div>
+                        <div class="d-info-row"><div class="d-label">Date:</div><div class="d-value" id="prev_e_date">—</div></div>
+                        <div class="d-info-row"><div class="d-label">Name:</div><div class="d-value" id="prev_e_name">—</div></div>
+                        <div class="d-info-row"><div class="d-label">PAN:</div><div class="d-value" id="prev_e_pan">—</div></div>
+                        <div class="d-info-row"><div class="d-label">Contact No:</div><div class="d-value" id="prev_e_contact">—</div></div>
+                        <div class="d-info-row"><div class="d-label">Address:</div><div class="d-value" id="prev_e_address">—</div></div>
+                    </div>
+                    
+                    <div class="emi-greeting">
+                        Dear Sir/Madam,<br>
+                        We are pleased to provide the quotation for Samsung Mobile as per the details mentioned below:
+                    </div>
+
+                    <table class="emi-table">
+                        <thead><tr><th>Description</th><th>Product Details</th></tr></thead>
+                        <tbody>
+                            <tr><td class="label-col">Model Name</td><td class="val-col" id="prev_e_model">—</td></tr>
+                            <tr><td class="label-col">Storage (GB)</td><td class="val-col" id="prev_e_storage">—</td></tr>
+                            <tr><td class="label-col">IMEI Number</td><td class="val-col" id="prev_e_imei">—</td></tr>
+                            <tr><td class="label-col">Cost Price (Rs.)</td><td class="val-col" id="prev_e_cost">0</td></tr>
+                            <tr><td class="label-col">Discount (Rs.)</td><td class="val-col" id="prev_e_discount">0</td></tr>
+                            <tr><td class="label-col">Total Amount (Rs.)</td><td class="val-col" style="font-weight:700;" id="prev_e_total">0</td></tr>
+                            <tr><td class="label-col">Down Payment (Rs.)</td><td class="val-col" id="prev_e_dp">0</td></tr>
+                            <tr><td class="label-col">Tenure</td><td class="val-col" id="prev_e_tenure">—</td></tr>
+                            <tr><td class="label-col">Loan Amount (Rs.)</td><td class="val-col" style="font-weight:700;" id="prev_e_loan">0</td></tr>
+                        </tbody>
+                    </table>
+
+                    <div class="d-note" style="margin-top:20px;">
+                        *Terms and Conditions:<br>
+                        All rates are inclusive of 13% VAT.<br>
+                        Validity: 30 Days
+                    </div>
+
+                    <div class="d-signature">
+                        <div class="sig-box">
+                            <div class="sig-line"></div>
+                            <div class="sig-label">Prepared By</div>
+                            <div class="sig-name" id="prev_e_staff">—</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const State = {
+            receipt:   { id: null, isDirty: false, prefix: 'CCP - ', items: [] },
+            quotation: { id: null, isDirty: false, prefix: 'QT - ', items: [] },
+            emi:       { id: null, isDirty: false, prefix: 'EMI - ', data: {} }
+        };
+
+        // ========== CORE & TAB LOGIC ==========
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId + '-tab').classList.add('active');
+            if(btn) btn.classList.add('active');
+        }
+
+        function cacheStaffName(name) {
+            localStorage.setItem('cachedStaffName', name);
+            document.getElementById('r_staff').value = name;
+            document.getElementById('q_staff').value = name;
+            document.getElementById('e_staff').value = name;
+            updatePreview('receipt'); updatePreview('quotation'); updatePreview('emi');
+        }
+
+        // ========== HELPERS ==========
+        function padNumber(num) { return String(num).padStart(2, '0'); }
+
+        function getNepaliDateCtor() {
+            const candidates = [window.NepaliDate, window.NepaliDate?.default, window.nepaliDateConverter, window.nepaliDateConverter?.default];
+            return candidates.find(x => typeof x === 'function') || null;
+        }
+        function getBSDate(adDateStr) {
+            try {
+                if (!adDateStr) return '—';
+                const NepaliDateCtor = getNepaliDateCtor();
+                if (!NepaliDateCtor) return '—';
+                const [y, m, d] = adDateStr.split('-').map(Number);
+                const nDate = new NepaliDateCtor(new Date(Date.UTC(y, m - 1, d, 12, 0, 0)));
+                return `${nDate.getYear()}.${String(nDate.getMonth() + 1).padStart(2, '0')}.${String(nDate.getDate()).padStart(2, '0')}`;
+            } catch (e) { return '—'; }
+        }
+
+        function formatAmtRaw(num) {
+            return Number(num).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+        }
+        function formatAmount(val) {
+            return Number(val).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '/-';
+        }
+        function formatDateShort(adDateStr) {
+            if (!adDateStr) return '';
+            const [y, m, d] = adDateStr.split('-').map(Number);
+            if (!y || !m || !d) return adDateStr;
+            return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+        }
+        function itemsTotal(items) { return items.reduce((sum, item) => sum + ((Number(item.qty)||0) * (Number(item.rate)||0)), 0); }
+
+        function numberToWords(num) {
+            if (isNaN(num) || num === 0) return "Zero Rupees Only.";
+            const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+            const tens = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+            function convert(n) {
+                n = Math.floor(n);
+                if (n === 0) return '';
+                if (n < 20) return ones[n];
+                if (n < 100) return tens[Math.floor(n/10)] + (n%10 ? ' ' + ones[n%10] : '');
+                return ones[Math.floor(n/100)] + ' Hundred' + (n%100 ? ' ' + convert(n%100) : '');
+            }
+            const rupees = Math.floor(num);
+            let words = '';
+            if (rupees > 0) {
+                const crore = Math.floor(rupees / 10000000);
+                const lakh = Math.floor((rupees % 10000000) / 100000);
+                const thousand = Math.floor((rupees % 100000) / 1000);
+                const hundred = rupees % 1000;
+                if (crore) words += convert(crore) + ' Crore ';
+                if (lakh) words += convert(lakh) + ' Lakh ';
+                if (thousand) words += convert(thousand) + ' Thousand ';
+                if (hundred) words += convert(hundred);
+                words = words.trim() + ' Rupees';
+            } else words = 'Zero Rupees';
+            return words + ' Only.';
+        }
+
+        // ========== DB & MODAL ==========
+        function getDB(type) { return JSON.parse(localStorage.getItem(`pranish_${type}s`) || '[]'); }
+        function saveDB(type, db) { localStorage.setItem(`pranish_${type}s`, JSON.stringify(db)); }
+        
+        function getNextVoucher(type) {
+            const db = getDB(type);
+            let max = 0;
+            db.forEach(item => { const match = String(item.voucher || '').match(/\d+/); if (match) max = Math.max(max, parseInt(match[0], 10)); });
+            return State[type].prefix + padNumber(max + 1);
+        }
+
+        // Column definitions per document type — drives both the modal header
+        // row and each data row, so every saved field has its own column.
+        const MODAL_COLUMNS = {
+            receipt: [
+                { label: 'No.', get: d => d.voucher, strong: true },
+                { label: 'Date', get: d => formatDateShort(d.date) },
+                { label: 'Name', get: d => d.name },
+                { label: 'Contact', get: d => d.contact },
+                { label: 'Address', get: d => d.address, wrap: true },
+                { label: 'Received By', get: d => d.staff },
+                { label: 'Receipt For', get: d => (d.items || []).map(i => i.description).filter(Boolean).join(', ') || d.product, wrap: true },
+                { label: 'Amount', get: d => formatAmtRaw(d.amount || 0), num: true },
+            ],
+            quotation: [
+                { label: 'No.', get: d => d.voucher, strong: true },
+                { label: 'Date', get: d => formatDateShort(d.date) },
+                { label: 'Name', get: d => d.name },
+                { label: 'PAN', get: d => d.pan },
+                { label: 'Contact', get: d => d.contact },
+                { label: 'Address', get: d => d.address, wrap: true },
+                { label: 'Prepared By', get: d => d.staff },
+                { label: 'Items', get: d => (d.items || []).map(i => i.description).filter(Boolean).join(', '), wrap: true },
+                { label: 'Amount', get: d => formatAmtRaw(d.amount || 0), num: true },
+            ],
+            emi: [
+                { label: 'No.', get: d => d.voucher, strong: true },
+                { label: 'Date', get: d => formatDateShort(d.date) },
+                { label: 'Name', get: d => d.name },
+                { label: 'PAN', get: d => d.pan },
+                { label: 'Contact', get: d => d.contact },
+                { label: 'Address', get: d => d.address, wrap: true },
+                { label: 'Model', get: d => d.model },
+                { label: 'Storage', get: d => d.storage ? `${d.storage} GB` : '' },
+                { label: 'IMEI', get: d => d.imei },
+                { label: 'Cost', get: d => formatAmtRaw(d.cost || 0), num: true },
+                { label: 'Discount', get: d => formatAmtRaw(d.discount || 0), num: true },
+                { label: 'Total', get: d => formatAmtRaw((Number(d.cost) || 0) - (Number(d.discount) || 0)), num: true },
+                { label: 'DP %', get: d => (d.dp_pct !== undefined && d.dp_pct !== '') ? `${d.dp_pct}%` : '', num: true },
+                { label: 'DP Amt', get: d => formatAmtRaw(d.dp_rs || 0), num: true },
+                { label: 'Tenure', get: d => d.tenure ? `${d.tenure} mo` : '' },
+                { label: 'Loan', get: d => formatAmtRaw(((Number(d.cost) || 0) - (Number(d.discount) || 0)) - (Number(d.dp_rs) || 0)), num: true, strong: true },
+                { label: 'Prepared By', get: d => d.staff },
+            ]
+        };
+
+        function openModal(type) {
+            const db = getDB(type);
+            const overlay = document.getElementById('dbModal');
+            document.getElementById('modalTitle').textContent = `Saved ${type.charAt(0).toUpperCase() + type.slice(1)}s`;
+
+            const cols = MODAL_COLUMNS[type];
+            document.getElementById('modalThead').innerHTML =
+                cols.map(c => `<th${c.num ? ' class="num"' : ''}>${c.label}</th>`).join('') + '<th></th>';
+
+            const tbody = document.getElementById('modalTbody');
+            if (db.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="${cols.length + 1}" style="text-align:center;color:#666;padding:26px;">No items saved yet</td></tr>`;
+            } else {
+                tbody.innerHTML = db.slice().reverse().map(item => {
+                    const cells = cols.map(c => {
+                        const raw = c.get(item);
+                        const val = (raw === undefined || raw === null || raw === '') ? '—' : escapeHtml(raw);
+                        const classes = [c.num ? 'num' : '', c.strong ? 'strong-cell' : '', c.wrap ? 'wrap-cell' : ''].filter(Boolean).join(' ');
+                        return `<td${classes ? ` class="${classes}"` : ''}>${val}</td>`;
+                    }).join('');
+                    return `<tr>${cells}<td style="text-align:center;"><button class="action-btn" onclick="loadDocument('${type}', '${item.id}'); closeModal();" title="Edit">✏️</button></td></tr>`;
+                }).join('');
+            }
+            overlay.classList.add('active');
+        }
+        function closeModal() { document.getElementById('dbModal').classList.remove('active'); }
+
+        // ========== UI HELPERS ==========
+        function setBadge(type, text, styleType) {
+            const b = document.getElementById(`${type.charAt(0)}_badge`);
+            b.textContent = text;
+            if (styleType === 'edit') { b.style.background = '#fef3c7'; b.style.color = '#d97706'; }
+            else if (styleType === 'save') { b.style.background = '#dcfce7'; b.style.color = '#16a34a'; }
+            else { b.style.background = 'transparent'; b.textContent = ''; }
+        }
+        function toggleButtons(type) {
+            const pre = type.charAt(0);
+            const isEdit = State[type].id !== null;
+            document.getElementById(`${pre}_create_btns`).style.display = isEdit ? 'none' : 'flex';
+            document.getElementById(`${pre}_edit_btns`).style.display = isEdit ? 'flex' : 'none';
+        }
+        function setText(id, value) { const el = document.getElementById(id); if (el) el.textContent = value; }
+
+        // ========== ITEMS EDITOR (Receipt/Quotation) ==========
+        function renderItemEditor(type) {
+            const pre = type.charAt(0);
+            const container = document.getElementById(`${pre}_itemsEditor`);
+            const items = State[type].items;
+            const isR = type === 'receipt';
+            
+            const rows = items.map((item, index) => `
+                <tr><td class="sn" style="text-align:center;font-weight:600;color:#64748b;">${index + 1}</td>
+                <td><input type="text" value="${escapeHtml(item.description)}" placeholder="${isR ? 'Receipt For' : 'Description'}" oninput="updateItem('${type}', ${index}, 'description', this.value)"></td>
+                ${!isR ? `<td><input type="number" min="0" value="${item.qty}" oninput="updateItem('${type}', ${index}, 'qty', this.value)"></td>
+                          <td><input type="number" min="0" value="${item.rate}" oninput="updateItem('${type}', ${index}, 'rate', this.value)"></td>` : ''}
+                ${isR ? `<td><input type="number" min="0" value="${item.rate}" placeholder="Amount" oninput="updateItem('${type}', ${index}, 'rate', this.value)"></td>` : `<td style="text-align:right;font-weight:700;">${formatAmount((Number(item.qty)||0)*(Number(item.rate)||0))}</td>`}
+                <td><button type="button" class="item-delete" onclick="removeItem('${type}', ${index})">×</button></td></tr>
+            `).join('');
+
+            const headers = isR ? `<th style="width:34px;">#</th><th>Receipt For</th><th style="width:150px;text-align:right;">Amount</th><th style="width:36px;"></th>` : `<th style="width:34px;">#</th><th>Description</th><th style="width:70px;">Qty</th><th style="width:115px;">Rate</th><th style="width:120px;text-align:right;">Amount</th><th style="width:36px;"></th>`;
+            container.innerHTML = `<table class="item-editor-table"><thead><tr>${headers}</tr></thead><tbody>${rows||'<tr><td colspan="6" style="text-align:center;">No items.</td></tr>'}</tbody></table>
+                <div class="items-footer"><button type="button" class="add-item-btn" onclick="addItem('${type}')">＋ Add Entry</button>
+                <div style="font-weight:700;font-size:13px;">Total: <strong>${formatAmount(itemsTotal(items))}</strong></div></div>`;
+        }
+
+        function addItem(type) { State[type].items.push({ description:'', qty:1, rate:0 }); State[type].isDirty=true; renderItemEditor(type); updatePreview(type); }
+        function removeItem(type, idx) { State[type].items.length===1 ? State[type].items[0]={description:'',qty:1,rate:0} : State[type].items.splice(idx, 1); State[type].isDirty=true; renderItemEditor(type); updatePreview(type); }
+        function updateItem(type, idx, f, v) { if(!State[type].items[idx]) return; State[type].items[idx][f] = f==='description'?v:Math.max(0,Number(v)||0); State[type].isDirty=true; renderItemEditor(type); updatePreview(type); }
+
+        // ========== PREVIEW UPDATES ==========
+        function updatePreview(type) {
+            State[type].isDirty = true;
+            const pre = type.charAt(0);
+            const vDate = document.getElementById(`${pre}_date`).value;
+            let fullDate = '—';
+            if (vDate) {
+                const [y, m, d] = vDate.split('-').map(Number);
+                const adFormat = new Date(y, m - 1, d).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+                fullDate = `${adFormat} (${getBSDate(vDate)})`;
+            }
+
+            setText(`prev_${pre}_voucher`, document.getElementById(`${pre}_voucher`).value || '—');
+            setText(`prev_${pre}_date`, fullDate);
+            setText(`prev_${pre}_name`, document.getElementById(`${pre}_name`).value || '—');
+            setText(`prev_${pre}_contact`, document.getElementById(`${pre}_contact`).value || '—');
+            setText(`prev_${pre}_address`, document.getElementById(`${pre}_address`).value || '—');
+            setText(`prev_${pre}_staff`, document.getElementById(`${pre}_staff`).value || '—');
+
+            if (type === 'receipt' || type === 'quotation') {
+                if(type==='quotation') setText('prev_q_pan', document.getElementById('q_pan').value || '—');
+                const tbody = document.getElementById(`prev_${pre}_items`);
+                const items = State[type].items;
+                const rows = items.map((it, i) => {
+                    const amt = formatAmount((Number(it.qty)||0)*(Number(it.rate)||0));
+                    if(type==='receipt') return `<tr><td class="sn">${i+1}.</td><td>${it.description||'—'}</td><td class="amt">${formatAmount(it.rate)}</td></tr>`;
+                    return `<tr><td class="sn">${i+1}.</td><td>${it.description||'—'}</td><td style="text-align:center;">${it.qty}</td><td class="amt">${formatAmount(it.rate)}</td><td class="amt">${amt}</td></tr>`;
+                }).join('');
+                tbody.innerHTML = rows + `<tr class="total-row"><td colspan="${type==='receipt'?2:4}" style="text-align:right;padding-right:14px;">TOTAL AMOUNT</td><td class="amt">${formatAmount(itemsTotal(items))}</td></tr>`;
+                setText(`prev_${pre}_words`, numberToWords(itemsTotal(items)));
+            } 
+            else if (type === 'emi') {
+                setText('prev_e_pan', document.getElementById('e_pan').value || '—');
+                setText('prev_e_model', document.getElementById('e_model').value || '—');
+                setText('prev_e_storage', document.getElementById('e_storage').value || '—');
+                setText('prev_e_imei', document.getElementById('e_imei').value || '—');
+                
+                const cost = Number(document.getElementById('e_cost').value) || 0;
+                const disc = Number(document.getElementById('e_discount').value) || 0;
+                const total = cost - disc;
+                const dpPct = Number(document.getElementById('e_dp_pct').value) || 0;
+                const dpAmt = total * (dpPct / 100);
+                const loan = total - dpAmt;
+                const tenRaw = document.getElementById('e_tenure').value;
+                const tenStr = tenRaw ? `${tenRaw} Months` : '—';
+
+                setText('prev_e_cost', formatAmtRaw(cost));
+                setText('prev_e_discount', formatAmtRaw(disc));
+                setText('prev_e_total', formatAmtRaw(total));
+                setText('prev_e_dp', formatAmtRaw(dpAmt));
+                setText('prev_e_tenure', tenStr);
+                setText('prev_e_loan', formatAmtRaw(loan));
+            }
+        }
+
+        // ========== CRUD ==========
+        function saveDocument(type) {
+            const pre = type.charAt(0);
+            const vNo = document.getElementById(`${pre}_voucher`).value.trim();
+            const db = getDB(type);
+            if (!vNo) { alert('Please enter a Voucher/Quotation Number'); return; }
+            if (db.some(x => String(x.voucher||'').toLowerCase()===vNo.toLowerCase() && x.id!==State[type].id)) { alert('Number already exists!'); return; }
+
+            const base = {
+                id: State[type].id || Date.now().toString(), voucher: vNo,
+                date: document.getElementById(`${pre}_date`).value,
+                name: document.getElementById(`${pre}_name`).value,
+                contact: document.getElementById(`${pre}_contact`).value,
+                address: document.getElementById(`${pre}_address`).value,
+                staff: document.getElementById(`${pre}_staff`).value
+            };
+
+            let docData;
+            if(type === 'receipt' || type === 'quotation') {
+                const total = itemsTotal(State[type].items);
+                docData = { ...base, items: State[type].items.map(i=>({...i})), amount: total, pan: type==='quotation'?document.getElementById('q_pan').value:'' };
+            } else {
+                docData = { ...base, pan: document.getElementById('e_pan').value, model: document.getElementById('e_model').value, storage: document.getElementById('e_storage').value, imei: document.getElementById('e_imei').value, cost: document.getElementById('e_cost').value, discount: document.getElementById('e_discount').value, dp_pct: document.getElementById('e_dp_pct').value, tenure: document.getElementById('e_tenure').value };
+                const cost = Number(docData.cost)||0; const total = cost - (Number(docData.discount)||0); docData.dp_rs = total * ((Number(docData.dp_pct)||0)/100);
+            }
+
+            const idx = db.findIndex(r => r.id === State[type].id);
+            if (idx >= 0) db[idx] = docData; else db.push(docData);
+            
+            saveDB(type, db); State[type].id = docData.id; State[type].isDirty = false;
+            setBadge(type, '✓ Saved Successfully', 'save'); toggleButtons(type);
+        }
+
+        function saveAsNew(type) { document.getElementById(`${type.charAt(0)}_voucher`).value = getNextVoucher(type); State[type].id = null; saveDocument(type); }
+
+        function loadDocument(type, id) {
+            if (State[type].isDirty && !confirm("Discard unsaved changes?")) return;
+            const doc = getDB(type).find(x => x.id === id); if (!doc) return;
+            State[type].id = id; State[type].isDirty = false;
+            const pre = type.charAt(0);
+
+            ['voucher','date','name','contact','address','staff'].forEach(f => document.getElementById(`${pre}_${f}`).value = doc[f]||'');
+            
+            if(type === 'receipt' || type === 'quotation') {
+                if(type==='quotation') document.getElementById('q_pan').value = doc.pan||'';
+                State[type].items = doc.items?.length ? doc.items : [{description:doc.product||'', qty:1, rate:Number(doc.amount)||0}];
+                renderItemEditor(type);
+            } else {
+                ['pan','model','storage','imei','cost','discount','dp_pct','tenure'].forEach(f => document.getElementById(`e_${f}`).value = doc[f]||'');
+            }
+
+            setBadge(type, '✏️ Editing Mode', 'edit'); toggleButtons(type); updatePreview(type); State[type].isDirty = false;
+        }
+
+        function newDocument(type) {
+            if (State[type].isDirty && !confirm("Discard unsaved changes?")) return;
+            State[type].id = null; State[type].isDirty = false; const pre = type.charAt(0);
+            
+            document.querySelectorAll(`.track-${pre}`).forEach(el => el.value = '');
+            document.getElementById(`${pre}_voucher`).value = getNextVoucher(type);
+            
+            const today = new Date(); const offset = today.getTimezoneOffset() * 60000;
+            document.getElementById(`${pre}_date`).value = new Date(today - offset).toISOString().split('T')[0];
+            
+            const cachedName = localStorage.getItem('cachedStaffName') || 'Nawaraj Dhital';
+            document.getElementById(`${pre}_staff`).value = cachedName;
+
+            if(type === 'receipt' || type === 'quotation') {
+                State[type].items = [{description:'',qty:1,rate:0}]; renderItemEditor(type);
+            } else document.getElementById('e_discount').value = 0;
+
+            setBadge(type, '', 'none'); toggleButtons(type); updatePreview(type); State[type].isDirty = false;
+        }
+
+        window.onload = function() {
+            document.querySelectorAll('.track-r').forEach(el => el.addEventListener('input', () => updatePreview('receipt')));
+            document.querySelectorAll('.track-q').forEach(el => el.addEventListener('input', () => updatePreview('quotation')));
+            document.querySelectorAll('.track-e').forEach(el => el.addEventListener('input', () => updatePreview('emi')));
+            newDocument('receipt'); newDocument('quotation'); newDocument('emi');
+        };
+    </script>
+</body>
+</html>
