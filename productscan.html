@@ -25,12 +25,15 @@
             </a>
             <h1 class="text-sm font-bold ml-2 text-white">Physical Stock Inspector</h1>
         </div>
-        <div id="syncBadge" class="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2.5 py-1 rounded-full font-mono">
-            Loading Cache…
+        <div id="syncBadge" class="text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-2.5 py-1 rounded-full font-mono">
+            Checking Cache…
         </div>
     </header>
 
     <main class="flex-1 p-4 space-y-5">
+
+        <!-- Diagnostic Debug Box (Visible if 0 Items Loaded) -->
+        <div id="debugKeys" class="hidden"></div>
         
         <!-- Live Camera Viewport -->
         <div class="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl relative">
@@ -138,7 +141,7 @@
 <script>
     let rawPhysicalProducts = [];
 
-    // The 4 requested target warehouses and flexible key matchers
+    // Restricted strictly to 4 target warehouses
     const TARGET_WAREHOUSES = [
         { id: 'main', name: 'Main Warehouse', matchers: ['main warehouse', 'main'] },
         { id: 'wh_a', name: 'Warehouse A', matchers: ['jawalakhel a', 'warehouse a'] },
@@ -146,7 +149,6 @@
         { id: 'city', name: 'City Center', matchers: ['city center warehouse', 'city center'] }
     ];
 
-    // Helper: Safely get field value regardless of exact letter casing or key naming
     function getProp(obj, matchers) {
         if (!obj) return '';
         const keys = Object.keys(obj);
@@ -161,7 +163,6 @@
         return '';
     }
 
-    // Helper: Get Qty for specific warehouse
     function getWhQty(item, whId) {
         const whDef = TARGET_WAREHOUSES.find(w => w.id === whId);
         if (!whDef) return 0;
@@ -174,26 +175,106 @@
         return (num || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    // Load data cached from physical stock sheet
+    // Advanced Cache Detector: Auto-searches all possible localStorage keys
     function loadCachedData() {
-        const raw = localStorage.getItem('inv_scan_products') || localStorage.getItem('inv_products');
-        const badge = document.getElementById('syncBadge');
+        const POSSIBLE_KEYS = [
+            'inv_scan_products',
+            'physicalStock',
+            'physical_stock',
+            'inv_physical_stock',
+            'physical_stock_data',
+            'inv_products',
+            'products',
+            'stock_data',
+            'cached_stock',
+            'sheet_data'
+        ];
 
-        if (raw) {
-            try {
-                rawPhysicalProducts = JSON.parse(raw);
-                badge.innerText = `${rawPhysicalProducts.length} Items Loaded`;
-                calculateGlobalStatistics();
-            } catch (e) {
-                console.error("Failed to parse cached stock data", e);
-                badge.innerText = "Cache Error";
+        let foundRaw = null;
+        let foundKey = null;
+
+        for (let key of POSSIBLE_KEYS) {
+            const item = localStorage.getItem(key);
+            if (item && item.trim().length > 2) {
+                foundRaw = item;
+                foundKey = key;
+                break;
             }
-        } else {
-            badge.innerText = "No Data Cached";
+        }
+
+        // Fallback: search ALL localStorage keys for anything containing 'stock', 'product', or 'sheet'
+        if (!foundRaw) {
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && (k.toLowerCase().includes('stock') || k.toLowerCase().includes('product') || k.toLowerCase().includes('sheet'))) {
+                    const item = localStorage.getItem(k);
+                    if (item && item.trim().length > 2) {
+                        foundRaw = item;
+                        foundKey = k;
+                        break;
+                    }
+                }
+            }
+        }
+
+        const badge = document.getElementById('syncBadge');
+        const debugContainer = document.getElementById('debugKeys');
+
+        if (foundRaw) {
+            try {
+                let parsed = JSON.parse(foundRaw);
+                
+                // Extract array if wrapped inside an object
+                if (!Array.isArray(parsed) && typeof parsed === 'object') {
+                    if (Array.isArray(parsed.data)) parsed = parsed.data;
+                    else if (Array.isArray(parsed.items)) parsed = parsed.items;
+                    else if (Array.isArray(parsed.physicalStock)) parsed = parsed.physicalStock;
+                    else if (Array.isArray(parsed.products)) parsed = parsed.products;
+                    else {
+                        const arrayProp = Object.values(parsed).find(v => Array.isArray(v));
+                        if (arrayProp) parsed = arrayProp;
+                    }
+                }
+
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    rawPhysicalProducts = parsed;
+                    badge.innerText = `${rawPhysicalProducts.length} Items Loaded (${foundKey})`;
+                    badge.className = "text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-1 rounded-full font-mono";
+                    calculateGlobalStatistics();
+                    if (debugContainer) debugContainer.classList.add('hidden');
+                    return;
+                }
+            } catch (e) {
+                console.error("Failed to parse cached stock data from key: " + foundKey, e);
+            }
+        }
+
+        // Diagnostic box if 0 items are loaded
+        badge.innerText = "0 Items Loaded";
+        badge.className = "text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-full font-mono";
+
+        const existingKeys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            existingKeys.push(localStorage.key(i));
+        }
+
+        if (debugContainer) {
+            debugContainer.classList.remove('hidden');
+            debugContainer.innerHTML = `
+                <div class="text-[11px] text-amber-300 bg-amber-950/40 border border-amber-500/30 p-3 rounded-xl space-y-1.5">
+                    <p class="font-bold">⚠️ No cached Physical Stock array found!</p>
+                    <p class="text-slate-300">Existing keys in browser storage (${existingKeys.length}): 
+                        <code class="bg-black/50 px-1.5 py-0.5 rounded text-amber-200 font-mono">${existingKeys.length ? existingKeys.join(', ') : 'NONE'}</code>
+                    </p>
+                    <p class="text-slate-400 text-[10px]">
+                        Please click <strong>Sync</strong> on <code>index.html</code>, or ensure your sync script executes: <br>
+                        <code class="text-indigo-300 font-mono">localStorage.setItem('inv_scan_products', JSON.stringify(physicalStockData));</code>
+                    </p>
+                </div>
+            `;
         }
     }
 
-    // Search and display scanned item
     function lookupItem(query) {
         if (!query) return;
         const q = query.trim().toLowerCase();
@@ -217,7 +298,6 @@
             const unit = getProp(first, ['units', 'unit']) || 'Pcs.';
             const rate = parseFloat(String(getProp(first, ['rate', 'mrp', 'cost'])).replace(/[^0-9.-]+/g, '')) || 0;
 
-            // Calculate aggregate totals across the 4 selected warehouses for all matching rows
             let total4WhQty = 0;
             let whTotals = { main: 0, wh_a: 0, wh_b: 0, city: 0 };
 
@@ -238,7 +318,6 @@
             document.getElementById('res4WhQty').innerText = `${total4WhQty} ${unit}`;
             document.getElementById('res4WhVal').innerText = formatNumber(total4WhQty * rate);
 
-            // Render 4 Warehouse Stock Cards
             const grid = document.getElementById('warehouseBreakdownGrid');
             grid.innerHTML = TARGET_WAREHOUSES.map(w => {
                 const qty = whTotals[w.id];
@@ -261,7 +340,6 @@
         }
     }
 
-    // Calculate simple statistics for the bottom section
     function calculateGlobalStatistics() {
         let totalItems = rawPhysicalProducts.length;
         let aggregateQty = 0;
@@ -307,7 +385,6 @@
         lookupItem(val);
     }
 
-    // Input debounce listener for barcode guns & manual typing
     let inputDebounce;
     document.getElementById('manualInput').addEventListener('input', (e) => {
         clearTimeout(inputDebounce);
@@ -317,7 +394,6 @@
     window.addEventListener('load', () => {
         loadCachedData();
 
-        // Start HTML5 Camera Barcode Reader
         const html5QrCode = new Html5Qrcode("reader");
         const qrCodeSuccessCallback = (decodedText) => {
             document.getElementById('manualInput').value = decodedText;
