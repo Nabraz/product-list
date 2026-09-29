@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>StockScan Pro - Mobile QR Inventory</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- SheetJS (XLSX) for Excel Parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <!-- HTML5-QRCode Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Camera overlay container styling */
+        #reader {
+            width: 100% !important;
+            border: none !important;
+            border-radius: 1rem;
+            overflow: hidden;
+            position: relative;
+            background-color: #000;
+        }
+
+        #reader video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            border-radius: 1rem;
+        }
+
+        #reader__scan_region {
+            background: transparent !important;
+        }
+
+        #reader__dashboard {
+            width: 100% !important;
+            margin-top: 10px !important;
+        }
+
+        /* Custom Laser Scan Beam Effect */
+        .scan-laser {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, rgba(239, 68, 68, 0) 0%, #ef4444 50%, rgba(239, 68, 68, 0) 100%);
+            box-shadow: 0 0 15px 3px rgba(239, 68, 68, 0.8);
+            animation: scanMove 2s infinite ease-in-out;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        @keyframes scanMove {
+            0% { top: 10%; }
+            50% { top: 90%; }
+            100% { top: 10%; }
+        }
+
+        /* Target focus corners for camera */
+        .scanner-corner {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-color: #3b82f6;
+            border-style: solid;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .top-left { top: 20px; left: 20px; border-width: 4px 0 0 4px; border-top-left-radius: 8px; }
+        .top-right { top: 20px; right: 20px; border-width: 4px 4px 0 0; border-top-right-radius: 8px; }
+        .bottom-left { bottom: 20px; left: 20px; border-width: 0 0 4px 4px; border-bottom-left-radius: 8px; }
+        .bottom-right { bottom: 20px; right: 20px; border-width: 0 4px 4px 0; border-bottom-right-radius: 8px; }
+
+        /* Pulse animation on match */
+        @keyframes pulseFlash {
+            0% { background-color: rgba(34, 197, 94, 0.3); }
+            100% { background-color: transparent; }
+        }
+        .flash-success {
+            animation: pulseFlash 0.6s ease-out;
+        }
+
+        /* Hide scrollbars for smooth mobile UX */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- Top Header Navigation -->
+    <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 shadow-md">
+        <div class="max-w-md mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+                    <i class="fa-solid font-bold fa-qrcode text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base tracking-tight text-white leading-none">StockScan <span class="text-brand-500 text-xs px-1.5 py-0.5 bg-brand-500/10 rounded-full border border-brand-500/20 font-mono">PRO</span></h1>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Mobile Inventory Lookup</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button id="demoDataBtn" onclick="loadDemoData()" class="px-2.5 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 rounded-lg flex items-center gap-1.5 transition active:scale-95 shadow-sm">
+                    <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i>
+                    <span>Demo Data</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Mobile Viewport Container -->
+    <main class="flex-1 max-w-md w-full mx-auto p-4 space-y-4 pb-20">
+
+        <!-- Dataset Status & Excel Upload Card -->
+        <section class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700/60 shadow-lg backdrop-blur-sm">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <span id="statusIndicator" class="relative flex h-3 w-3">
+                      <span id="statusPing" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                      <span id="statusDot" class="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+                    </span>
+                    <span id="statusText" class="text-xs font-semibold text-slate-300">No Excel Sheet Loaded</span>
+                </div>
+                <span id="rowCountBadge" class="hidden text-[11px] font-mono px-2 py-0.5 bg-slate-700 text-indigo-300 rounded-full border border-slate-600">0 items</span>
+            </div>
+
+            <!-- Upload Area & Drag File -->
+            <label for="excelFileInput" class="group relative cursor-pointer block">
+                <div class="flex items-center justify-between border-2 border-dashed border-slate-600 group-hover:border-brand-500 rounded-xl p-3 bg-slate-900/50 hover:bg-slate-900/80 transition">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center">
+                            <i class="fa-solid fa-file-excel text-lg"></i>
+                        </div>
+                        <div>
+                            <p id="fileNameDisplay" class="text-xs font-medium text-slate-200 group-hover:text-white truncate max-w-[180px]">Upload Inventory Excel (.xlsx)</p>
+                            <p class="text-[10px] text-slate-400">Tap to browse or drop file</p>
+                        </div>
+                    </div>
+                    <span class="px-2.5 py-1 text-xs bg-brand-600 hover:bg-brand-500 text-white rounded-lg font-medium shadow-md group-hover:shadow-brand-500/20 transition">
+                        Browse
+                    </span>
+                </div>
+                <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileUpload(event)">
+            </label>
+        </section>
+
+        <!-- QR Scanner Section -->
+        <section class="bg-slate-800/90 rounded-2xl p-4 border border-slate-700/60 shadow-xl space-y-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-camera text-brand-400 text-sm"></i>
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">QR Camera Scanner</h2>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <button id="torchBtn" onclick="toggleTorch()" class="hidden px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-amber-300 rounded-lg border border-slate-600">
+                        <i class="fa-solid fa-bolt"></i>
+                    </button>
+                    <button id="startStopBtn" onclick="toggleScanner()" class="px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition flex items-center gap-1.5 shadow-md shadow-emerald-900/30">
+                        <i class="fa-solid fa-power-off"></i>
+                        <span id="startStopBtnText">Start Camera</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Camera Display & Framing Container -->
+            <div id="cameraViewportContainer" class="relative rounded-xl overflow-hidden bg-black min-h-[220px] flex items-center justify-center border border-slate-700">
+                <!-- Html5Qrcode injects video into #reader -->
+                <div id="reader" class="w-full"></div>
+
+                <!-- Laser scan animation (active when scanning) -->
+                <div id="laserBeam" class="scan-laser hidden"></div>
+
+                <!-- Camera Target Reticle Framing -->
+                <div id="scanTargetBox" class="hidden">
+                    <div class="scanner-corner top-left"></div>
+                    <div class="scanner-corner top-right"></div>
+                    <div class="scanner-corner bottom-left"></div>
+                    <div class="scanner-corner bottom-right"></div>
+                </div>
+
+                <!-- Idle Camera Placeholder -->
+                <div id="cameraPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-500 p-6 text-center space-y-2">
+                    <div class="w-12 h-12 rounded-full bg-slate-800/80 flex items-center justify-center text-slate-400 text-xl mb-1 border border-slate-700">
+                        <i class="fa-solid fa-camera-rotate"></i>
+                    </div>
+                    <p class="text-xs font-medium text-slate-300">Camera is currently stopped</p>
+                    <p class="text-[11px] text-slate-500 max-w-[200px]">Tap 'Start Camera' above to scan QR code stickers on items.</p>
+                </div>
+            </div>
+
+            <!-- Controls: Camera Selection Dropdown -->
+            <div id="cameraControls" class="hidden flex items-center justify-between gap-2 pt-1">
+                <div class="flex-1">
+                    <select id="cameraSelect" onchange="switchCamera(this.value)" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-brand-500">
+                        <option value="">Detecting cameras...</option>
+                    </select>
+                </div>
+                <button onclick="flipCamera()" class="px-2.5 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-medium border border-slate-600 flex items-center gap-1">
+                    <i class="fa-solid fa-rotate"></i>
+                    <span>Flip</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Fallback Manual Input & Quick Search -->
+        <section class="bg-slate-800/60 rounded-xl p-3 border border-slate-700/50">
+            <form onsubmit="handleManualSearch(event)" class="relative flex items-center">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 text-slate-400 text-xs"></i>
+                <input type="text" id="manualSearchInput" placeholder="Enter or paste ITEM CODE (e.g. SKU-8801)" class="w-full bg-slate-900 border border-slate-700 text-slate-100 text-xs rounded-xl pl-8 pr-20 py-2.5 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 placeholder-slate-500 font-mono">
+                <button type="submit" class="absolute right-1.5 px-3 py-1 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-xs font-medium transition shadow-sm">
+                    Search
+                </button>
+            </form>
+        </section>
+
+        <!-- Notification Toast Banner -->
+        <div id="toastAlert" class="hidden rounded-xl p-3 border flex items-center justify-between transition-all duration-300">
+            <div class="flex items-center gap-2.5">
+                <i id="toastIcon" class="fa-solid text-base"></i>
+                <div>
+                    <h4 id="toastTitle" class="text-xs font-bold">Alert Title</h4>
+                    <p id="toastMessage" class="text-[11px] opacity-90">Alert message text goes here.</p>
+                </div>
+            </div>
+            <button onclick="hideToast()" class="text-slate-400 hover:text-white text-xs p-1">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- Stock Details Container (Appears when item found) -->
+        <div id="stockResultCard" class="hidden space-y-4">
+
+            <!-- Item Main Header Badge -->
+            <div class="bg-slate-800 rounded-2xl p-4 border border-brand-500/30 shadow-xl relative overflow-hidden">
+                <div class="absolute -right-6 -top-6 w-24 h-24 bg-brand-500/10 rounded-full blur-xl pointer-events-none"></div>
+
+                <div class="flex items-start justify-between gap-2 mb-2">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded bg-brand-500/20 text-brand-300 text-[10px] font-mono font-bold uppercase border border-brand-500/30" id="resCategory">CATEGORY</span>
+                            <span class="text-xs text-slate-400 font-mono" id="resUnit">UNIT</span>
+                        </div>
+                        <h2 class="text-lg font-bold text-white mt-1 leading-snug" id="resItemName">Item Name Text</h2>
+                    </div>
+                </div>
+
+                <!-- Code & Batch Info Bar -->
+                <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-700/80 text-xs">
+                    <div>
+                        <span class="text-slate-400 text-[10px] uppercase block font-semibold">Item Code</span>
+                        <span class="font-mono text-emerald-400 font-bold text-sm" id="resItemCode">SKU-0000</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 text-[10px] uppercase block font-semibold">Batch / Batch ID</span>
+                        <span class="font-mono text-slate-200" id="resBatchInfo">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PRIMARY WAREHOUSES - Target Focus Cards (Grid 2x2) -->
+            <div>
+                <div class="flex items-center justify-between mb-2 px-1">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                        <i class="fa-solid fa-warehouse text-brand-400"></i>
+                        <span>Primary Locations Stock</span>
+                    </h3>
+                    <span class="text-[10px] text-slate-400">Target Warehouses</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2.5">
+                    
+                    <!-- Main Warehouse -->
+                    <div class="bg-gradient-to-br from-slate-800 to-slate-800/90 rounded-xl p-3 border border-blue-500/30 shadow-md">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[11px] font-semibold text-blue-400 truncate">Main Warehouse</span>
+                            <i class="fa-solid fa-boxes-stacked text-blue-400/60 text-xs"></i>
+                        </div>
+                        <div class="text-xl font-extrabold font-mono text-white" id="stockMain">0</div>
+                        <span class="text-[10px] text-slate-400 font-mono">Available Stock</span>
+                    </div>
+
+                    <!-- Jawalakhel A -->
+                    <div class="bg-gradient-to-br from-slate-800 to-slate-800/90 rounded-xl p-3 border border-emerald-500/30 shadow-md">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[11px] font-semibold text-emerald-400 truncate">Jawalakhel A</span>
+                            <i class="fa-solid fa-store text-emerald-400/60 text-xs"></i>
+                        </div>
+                        <div class="text-xl font-extrabold font-mono text-white" id="stockJawalakhelA">0</div>
+                        <span class="text-[10px] text-slate-400 font-mono">Available Stock</span>
+                    </div>
+
+                    <!-- Jawalakhel B -->
+                    <div class="bg-gradient-to-br from-slate-800 to-slate-800/90 rounded-xl p-3 border border-teal-500/30 shadow-md">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[11px] font-semibold text-teal-400 truncate">Jawalakhel B</span>
+                            <i class="fa-solid fa-store text-teal-400/60 text-xs"></i>
+                        </div>
+                        <div class="text-xl font-extrabold font-mono text-white" id="stockJawalakhelB">0</div>
+                        <span class="text-[10px] text-slate-400 font-mono">Available Stock</span>
+                    </div>
+
+                    <!-- City Center Warehouse -->
+                    <div class="bg-gradient-to-br from-slate-800 to-slate-800/90 rounded-xl p-3 border border-purple-500/30 shadow-md">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[11px] font-semibold text-purple-400 truncate">City Center</span>
+                            <i class="fa-solid fa-building text-purple-400/60 text-xs"></i>
+                        </div>
+                        <div class="text-xl font-extrabold font-mono text-white" id="stockCityCenter">0</div>
+                        <span class="text-[10px] text-slate-400 font-mono">Available Stock</span>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Total Summary Banner -->
+            <div class="bg-slate-800/90 rounded-xl p-3 border border-slate-700 grid grid-cols-3 gap-2 text-center">
+                <div>
+                    <span class="text-[10px] text-slate-400 uppercase font-semibold block">Total Stock</span>
+                    <span class="text-base font-extrabold text-amber-400 font-mono" id="resTotalQty">0</span>
+                </div>
+                <div>
+                    <span class="text-[10px] text-slate-400 uppercase font-semibold block">Rate</span>
+                    <span class="text-base font-extrabold text-slate-200 font-mono" id="resRate">0.00</span>
+                </div>
+                <div>
+                    <span class="text-[10px] text-slate-400 uppercase font-semibold block">Stock Value</span>
+                    <span class="text-base font-extrabold text-emerald-400 font-mono" id="resTotalValue">0.00</span>
+                </div>
+            </div>
+
+            <!-- SECONDARY WAREHOUSES Accordion / Box -->
+            <div class="bg-slate-800/60 rounded-xl p-3 border border-slate-700/60 space-y-2">
+                <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <i class="fa-solid fa-cubes text-slate-400"></i>
+                    <span>Other Warehouses & Stock</span>
+                </h4>
+                <div class="grid grid-cols-3 gap-2 text-xs">
+                    <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800 text-center">
+                        <span class="text-[10px] text-slate-400 block truncate">Jawalakhel C</span>
+                        <span class="font-mono font-bold text-slate-200" id="stockJawalakhelC">0</span>
+                    </div>
+                    <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800 text-center">
+                        <span class="text-[10px] text-slate-400 block truncate">Jawalakhel D</span>
+                        <span class="font-mono font-bold text-slate-200" id="stockJawalakhelD">0</span>
+                    </div>
+                    <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800 text-center">
+                        <span class="text-[10px] text-slate-400 block truncate">Chalan Whs</span>
+                        <span class="font-mono font-bold text-slate-200" id="stockChalan">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Item Metadata Table -->
+            <div class="bg-slate-800/60 rounded-xl p-3 border border-slate-700/60 space-y-2 text-xs">
+                <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Item Classifications & Supplier</h4>
+                
+                <div class="grid grid-cols-2 gap-x-4 gap-y-2 pt-1 border-t border-slate-700/50">
+                    <div>
+                        <span class="text-[10px] text-slate-500 block">Supplier</span>
+                        <span class="text-slate-200 font-medium" id="resSupplier">-</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-500 block">LMC Actual</span>
+                        <span class="text-slate-200 font-mono" id="resLMCActual">-</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-500 block">Main Group</span>
+                        <span class="text-slate-300" id="resMainGroup">-</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-500 block">Sub Group A</span>
+                        <span class="text-slate-300" id="resSubGroupA">-</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-500 block">Sub Group B</span>
+                        <span class="text-slate-300" id="resSubGroupB">-</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-500 block">Sub Group C</span>
+                        <span class="text-slate-300" id="resSubGroupC">-</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Recent Scans History Section -->
+        <section class="bg-slate-800/60 rounded-2xl p-4 border border-slate-700/60 space-y-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-brand-400 text-sm"></i>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Scan History</h3>
+                </div>
+                <button onclick="clearScanHistory()" class="text-[11px] text-slate-400 hover:text-red-400 transition">
+                    Clear Log
+                </button>
+            </div>
+
+            <div id="historyList" class="space-y-2 max-h-48 overflow-y-auto no-scrollbar">
+                <p id="emptyHistoryText" class="text-xs text-slate-500 text-center py-4">No recent scans yet.</p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Application Logic Script -->
+    <script>
+        
+        // Global State Variables
+        let inventoryData = [];
+        let html5QrCode = null;
+        let isScannerRunning = false;
+        let scanHistory = [];
+        let currentTorchState = false;
+
+        // Audio Feedback Context using Web Audio API
+        function playSoundCue(type) {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'success') {
+                    // Upbeat double-tone chime
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+                    osc.frequency.setValueAtTime(1318.51, audioCtx.currentTime + 0.08); // E6
+                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.25);
+                } else {
+                    // Low error buzz tone
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, audioCtx.currentTime); // A3
+                    osc.frequency.setValueAtTime(180, audioCtx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.3);
+                }
+            } catch (e) {
+                console.warn('Audio Context error or not permitted:', e);
+            }
+        }
+
+        // Haptic Feedback Helper
+        function triggerHaptic(type) {
+            if ("vibrate" in navigator) {
+                if (type === 'success') {
+                    navigator.vibrate([80, 40, 80]);
+                } else {
+                    navigator.vibrate([200]);
+                }
+            }
+        }
+
+
+        // Standard Demo Data Setup matching exact required headers
+        const DEMO_EXCEL_RECORDS = [
+            {
+                "ITEM CODE": "SKU-8801",
+                "BATCH": "BATCH-2026-A",
+                "BATCHID": "BT1019",
+                "ITEM NAME": "Paracetamol 500mg Tablets (Box of 100)",
+                "UNIT": "BOX",
+                "SUPPLIER": "Apex Pharma Ltd",
+                "Chalan Warehouse": 30,
+                "CITY CENTER WAREHOUSE": 210,
+                "Jawalakhel A": 120,
+                "Jawalakhel B": 85,
+                "Jawalakhel C": 40,
+                "Jawalakhel D": 15,
+                "Main Warehouse": 450,
+                "TOTAL STOCK QTY": 950,
+                "RATE": 120.00,
+                "TOTAL STOCK VALUE": 114000.00,
+                "MAIN GROUP": "Medicines",
+                "SUB GROUP_A": "Analgesics",
+                "SUB GROUP_B": "Oral",
+                "SUB GROUP_C": "Tablets",
+                "CATEGORY": "Pharma",
+                "lmc actual": 950
+            },
+            {
+                "ITEM CODE": "SKU-9022",
+                "BATCH": "BT-GT-09",
+                "BATCHID": "BT1022",
+                "ITEM NAME": "Organic Green Tea Premium 250g",
+                "UNIT": "PACK",
+                "SUPPLIER": "Himalayan Herbs Pvt Ltd",
+                "Chalan Warehouse": 20,
+                "CITY CENTER WAREHOUSE": 90,
+                "Jawalakhel A": 45,
+                "Jawalakhel B": 30,
+                "Jawalakhel C": 10,
+                "Jawalakhel D": 5,
+                "Main Warehouse": 150,
+                "TOTAL STOCK QTY": 350,
+                "RATE": 450.00,
+                "TOTAL STOCK VALUE": 157500.00,
+                "MAIN GROUP": "Grocery",
+                "SUB GROUP_A": "Tea & Coffee",
+                "SUB GROUP_B": "Herbal",
+                "SUB GROUP_C": "Leaves",
+                "CATEGORY": "Beverages",
+                "lmc actual": 350
+            },
+            {
+                "ITEM CODE": "123456",
+                "BATCH": "SS-FL-2026",
+                "BATCHID": "BT1044",
+                "ITEM NAME": "Stainless Steel Flask 1000ml",
+                "UNIT": "PCS",
+                "SUPPLIER": "Kathmandu Housewares",
+                "Chalan Warehouse": 50,
+                "CITY CENTER WAREHOUSE": 110,
+                "Jawalakhel A": 60,
+                "Jawalakhel B": 40,
+                "Jawalakhel C": 25,
+                "Jawalakhel D": 15,
+                "Main Warehouse": 200,
+                "TOTAL STOCK QTY": 500,
+                "RATE": 1150.00,
+                "TOTAL STOCK VALUE": 575000.00,
+                "MAIN GROUP": "Kitchen",
+                "SUB GROUP_A": "Containers",
+                "SUB GROUP_B": "Insulated",
+                "SUB GROUP_C": "Steel",
+                "CATEGORY": "Houseware",
+                "lmc actual": 500
+            },
+            {
+                "ITEM CODE": "QR-8890",
+                "BATCH": "LOG-2026",
+                "BATCHID": "BT1088",
+                "ITEM NAME": "Wireless Optical Mouse - Dark Grey",
+                "UNIT": "PCS",
+                "SUPPLIER": "Tech Hub Nepal",
+                "Chalan Warehouse": 15,
+                "CITY CENTER WAREHOUSE": 35,
+                "Jawalakhel A": 25,
+                "Jawalakhel B": 20,
+                "Jawalakhel C": 10,
+                "Jawalakhel D": 5,
+                "Main Warehouse": 80,
+                "TOTAL STOCK QTY": 190,
+                "RATE": 850.00,
+                "TOTAL STOCK VALUE": 161500.00,
+                "MAIN GROUP": "IT Hardware",
+                "SUB GROUP_A": "Peripherals",
+                "SUB GROUP_B": "Wireless",
+                "SUB GROUP_C": "Mouse",
+                "CATEGORY": "Electronics",
+                "lmc actual": 190
+            },
+            {
+                "ITEM CODE": "890123456789",
+                "BATCH": "RICE-MAR-26",
+                "BATCHID": "BT1102",
+                "ITEM NAME": "Jasmine Premium Rice 5kg Bag",
+                "UNIT": "BAG",
+                "SUPPLIER": "Quality Grains Traders",
+                "Chalan Warehouse": 100,
+                "CITY CENTER WAREHOUSE": 300,
+                "Jawalakhel A": 200,
+                "Jawalakhel B": 150,
+                "Jawalakhel C": 50,
+                "Jawalakhel D": 50,
+                "Main Warehouse": 600,
+                "TOTAL STOCK QTY": 1450,
+                "RATE": 980.00,
+                "TOTAL STOCK VALUE": 1421000.00,
+                "MAIN GROUP": "Food & Staples",
+                "SUB GROUP_A": "Rice",
+                "SUB GROUP_B": "Aromatic",
+                "SUB GROUP_C": "5KG",
+                "CATEGORY": "Grains",
+                "lmc actual": 1450
+            }
+        ];
+
+        // Load Demo Data
+        function loadDemoData() {
+            inventoryData = DEMO_EXCEL_RECORDS;
+            updateDatasetStatus("Demo Excel Sheet (5 Items Loaded)", inventoryData.length, true);
+            showToast("Demo Data Loaded", "Loaded 5 sample items ready to scan or search.", "success");
+        }
+
+        // Parse Excel / CSV File Upload via SheetJS
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    
+                    // Parse rows as JS objects
+                    const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+                    if (jsonRows.length === 0) {
+                        showToast("File Empty", "Uploaded Excel sheet contains no rows.", "error");
+                        return;
+                    }
+
+                    inventoryData = jsonRows;
+                    updateDatasetStatus(file.name, jsonRows.length, true);
+                    showToast("Sheet Loaded!", `Successfully loaded ${jsonRows.length} rows from ${file.name}`, "success");
+
+                } catch (err) {
+                    console.error("Excel processing error:", err);
+                    showToast("Parse Error", "Failed to parse the Excel file. Ensure valid format.", "error");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Update Dataset Status Indicator UI
+        function updateDatasetStatus(fileName, count, isLoaded) {
+            const statusText = document.getElementById("statusText");
+            const statusDot = document.getElementById("statusDot");
+            const statusPing = document.getElementById("statusPing");
+            const rowCountBadge = document.getElementById("rowCountBadge");
+            const fileNameDisplay = document.getElementById("fileNameDisplay");
+
+            if (isLoaded) {
+                statusText.innerText = "Excel Sheet Active";
+                statusText.className = "text-xs font-semibold text-emerald-400";
+                statusDot.className = "relative inline-flex rounded-full h-3 w-3 bg-emerald-500";
+                statusPing.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75";
+                
+                rowCountBadge.innerText = `${count} rows`;
+                rowCountBadge.classList.remove("hidden");
+                fileNameDisplay.innerText = fileName;
+            } else {
+                statusText.innerText = "No Excel Sheet Loaded";
+                statusText.className = "text-xs font-semibold text-slate-300";
+                statusDot.className = "relative inline-flex rounded-full h-3 w-3 bg-amber-500";
+                statusPing.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75";
+                
+                rowCountBadge.classList.add("hidden");
+                fileNameDisplay.innerText = "Upload Inventory Excel (.xlsx)";
+            }
+        }
+
+
+        // Initialize Camera / Html5Qrcode Scanner Engine
+        async function toggleScanner() {
+            if (isScannerRunning) {
+                stopScanner();
+            } else {
+                startScanner();
+            }
+        }
+
+        async function startScanner() {
+            if (!html5QrCode) {
+                html5QrCode = new Html5Qrcode("reader");
+            }
+
+            const placeholder = document.getElementById("cameraPlaceholder");
+            const targetBox = document.getElementById("scanTargetBox");
+            const laserBeam = document.getElementById("laserBeam");
+            const startStopBtn = document.getElementById("startStopBtn");
+            const startStopBtnText = document.getElementById("startStopBtnText");
+            const cameraControls = document.getElementById("cameraControls");
+
+            try {
+                // Populate cameras dropdown
+                const devices = await Html5Qrcode.getCameras();
+                const cameraSelect = document.getElementById("cameraSelect");
+                cameraSelect.innerHTML = "";
+
+                if (devices && devices.length > 0) {
+                    devices.forEach(device => {
+                        const opt = document.createElement("option");
+                        opt.value = device.id;
+                        opt.innerText = device.label || `Camera ${cameraSelect.length + 1}`;
+                        cameraSelect.appendChild(opt);
+                    });
+                    cameraControls.classList.remove("hidden");
+                }
+
+                const config = {
+                    fps: 15,
+                    qrbox: { width: 220, height: 220 },
+                    aspectRatio: 1.0
+                };
+
+                // Request environment facing camera by default
+                await html5QrCode.start(
+                    { facingMode: "environment" },
+                    config,
+                    onQrCodeScanned,
+                    onQrCodeScanError
+                );
+
+                isScannerRunning = true;
+                placeholder.classList.add("hidden");
+                targetBox.classList.remove("hidden");
+                laserBeam.classList.remove("hidden");
+
+                startStopBtnText.innerText = "Stop Camera";
+                startStopBtn.className = "px-3 py-1.5 text-xs font-semibold bg-red-600 hover:bg-red-500 text-white rounded-lg transition flex items-center gap-1.5 shadow-md shadow-red-900/30";
+
+            } catch (err) {
+                console.error("Camera start error:", err);
+                showToast("Camera Error", "Could not access mobile camera. Please allow camera permissions.", "error");
+            }
+        }
+
+        async function stopScanner() {
+            if (html5QrCode && isScannerRunning) {
+                try {
+                    await html5QrCode.stop();
+                    isScannerRunning = false;
+
+                    document.getElementById("cameraPlaceholder").classList.remove("hidden");
+                    document.getElementById("scanTargetBox").classList.add("hidden");
+                    document.getElementById("laserBeam").classList.add("hidden");
+
+                    const startStopBtn = document.getElementById("startStopBtn");
+                    const startStopBtnText = document.getElementById("startStopBtnText");
+                    startStopBtnText.innerText = "Start Camera";
+                    startStopBtn.className = "px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition flex items-center gap-1.5 shadow-md shadow-emerald-900/30";
+
+                    document.getElementById("cameraControls").classList.add("hidden");
+                } catch (e) {
+                    console.error("Error stopping scanner:", e);
+                }
+            }
+        }
+
+        async function switchCamera(deviceId) {
+            if (isScannerRunning && deviceId) {
+                await stopScanner();
+                if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+                
+                const config = { fps: 15, qrbox: { width: 220, height: 220 } };
+                await html5QrCode.start(deviceId, config, onQrCodeScanned, onQrCodeScanError);
+                isScannerRunning = true;
+                document.getElementById("cameraPlaceholder").classList.add("hidden");
+                document.getElementById("scanTargetBox").classList.remove("hidden");
+                document.getElementById("laserBeam").classList.remove("hidden");
+            }
+        }
+
+        async function flipCamera() {
+            if (!isScannerRunning) return;
+            const cameraSelect = document.getElementById("cameraSelect");
+            if (cameraSelect.options.length > 1) {
+                const nextIdx = (cameraSelect.selectedIndex + 1) % cameraSelect.options.length;
+                cameraSelect.selectedIndex = nextIdx;
+                switchCamera(cameraSelect.value);
+            } else {
+                showToast("Flip Camera", "Only one camera device detected.", "info");
+            }
+        }
+
+
+        // QR Code Scanned Callback
+        function onQrCodeScanned(decodedText, decodedResult) {
+            if (!decodedText) return;
+            
+            // Perform lookup on scanned text
+            lookupItemCode(decodedText.trim());
+        }
+
+        function onQrCodeScanError(error) {
+            // Ignore minor scan frame read failures
+        }
+
+        // Manual Search Form Handler
+        function handleManualSearch(e) {
+            e.preventDefault();
+            const val = document.getElementById("manualSearchInput").value.trim();
+            if (!val) {
+                showToast("Input Required", "Please enter an Item Code to search.", "info");
+                return;
+            }
+            lookupItemCode(val);
+        }
+
+        // Core Lookup & Match Logic
+        function lookupItemCode(searchCode) {
+            if (!inventoryData || inventoryData.length === 0) {
+                playSoundCue('error');
+                triggerHaptic('error');
+                showToast("No Excel Data", "Please upload an Excel spreadsheet or load Demo Data first.", "error");
+                return;
+            }
+
+            const cleanQuery = String(searchCode).trim().toLowerCase();
+
+            // Find match in 'ITEM CODE' column
+            const matchedRow = inventoryData.find(row => {
+                const itemCodeVal = row['ITEM CODE'] || row['Item Code'] || row['item code'] || '';
+                return String(itemCodeVal).trim().toLowerCase() === cleanQuery;
+            });
+
+            if (matchedRow) {
+                // Success Match!
+                playSoundCue('success');
+                triggerHaptic('success');
+                displayStockResult(matchedRow, searchCode);
+                addToHistory(searchCode, matchedRow, true);
+                showToast("Match Found!", `Item Code [${searchCode}] matched successfully.`, "success");
+
+                // Trigger visual flash
+                document.body.classList.add("flash-success");
+                setTimeout(() => document.body.classList.remove("flash-success"), 600);
+
+            } else {
+                // Not Found Match
+                playSoundCue('error');
+                triggerHaptic('error');
+                hideStockResult();
+                addToHistory(searchCode, null, false);
+                showToast("Not Found", `No item matching code [${searchCode}] found in current sheet.`, "error");
+            }
+        }
+
+
+        // Populate and Display Stock Details Card
+        function displayStockResult(row, scannedCode) {
+            const card = document.getElementById("stockResultCard");
+
+            // Format numbers safely
+            const formatNum = (val) => {
+                const n = parseFloat(val);
+                return isNaN(n) ? '0' : n.toLocaleString('en-US');
+            };
+
+            const formatCurr = (val) => {
+                const n = parseFloat(val);
+                return isNaN(n) ? '0.00' : n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            };
+
+            // Main Info
+            document.getElementById("resItemName").innerText = row['ITEM NAME'] || row['Item Name'] || 'N/A';
+            document.getElementById("resItemCode").innerText = row['ITEM CODE'] || scannedCode;
+            document.getElementById("resCategory").innerText = row['CATEGORY'] || 'General';
+            document.getElementById("resUnit").innerText = `Unit: ${row['UNIT'] || 'PCS'}`;
+
+            // Batch Info
+            const batch = row['BATCH'] || '-';
+            const batchId = row['BATCHID'] || '-';
+            document.getElementById("resBatchInfo").innerText = `${batch} / ${batchId}`;
+
+            // Focus Primary Warehouses
+            document.getElementById("stockMain").innerText = formatNum(row['Main Warehouse']);
+            document.getElementById("stockJawalakhelA").innerText = formatNum(row['Jawalakhel A']);
+            document.getElementById("stockJawalakhelB").innerText = formatNum(row['Jawalakhel B']);
+            document.getElementById("stockCityCenter").innerText = formatNum(row['CITY CENTER WAREHOUSE']);
+
+            // Totals
+            document.getElementById("resTotalQty").innerText = formatNum(row['TOTAL STOCK QTY']);
+            document.getElementById("resRate").innerText = formatCurr(row['RATE']);
+            document.getElementById("resTotalValue").innerText = formatCurr(row['TOTAL STOCK VALUE']);
+
+            // Secondary Warehouses
+            document.getElementById("stockJawalakhelC").innerText = formatNum(row['Jawalakhel C']);
+            document.getElementById("stockJawalakhelD").innerText = formatNum(row['Jawalakhel D']);
+            document.getElementById("stockChalan").innerText = formatNum(row['Chalan Warehouse']);
+
+            // Metadata & Groups
+            document.getElementById("resSupplier").innerText = row['SUPPLIER'] || '-';
+            document.getElementById("resLMCActual").innerText = formatNum(row['lmc actual']);
+            document.getElementById("resMainGroup").innerText = row['MAIN GROUP'] || '-';
+            document.getElementById("resSubGroupA").innerText = row['SUB GROUP_A'] || '-';
+            document.getElementById("resSubGroupB").innerText = row['SUB GROUP_B'] || '-';
+            document.getElementById("resSubGroupC").innerText = row['SUB GROUP_C'] || '-';
+
+            card.classList.remove("hidden");
+            
+            // Smooth scroll into view on mobile
+            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function hideStockResult() {
+            document.getElementById("stockResultCard").classList.add("hidden");
+        }
+
+
+        // Scan History Log Management
+        function addToHistory(code, itemRow, isFound) {
+            const historyItem = {
+                code,
+                name: itemRow ? (itemRow['ITEM NAME'] || 'Item Found') : 'Item Not Found',
+                totalQty: itemRow ? (itemRow['TOTAL STOCK QTY'] || 0) : 0,
+                isFound,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+            };
+
+            scanHistory.unshift(historyItem);
+            if (scanHistory.length > 20) scanHistory.pop(); // Keep last 20
+
+            renderHistoryUI();
+        }
+
+        function renderHistoryUI() {
+            const listContainer = document.getElementById("historyList");
+            const emptyText = document.getElementById("emptyHistoryText");
+
+            if (scanHistory.length === 0) {
+                emptyText.classList.remove("hidden");
+                listContainer.innerHTML = '';
+                listContainer.appendChild(emptyText);
+                return;
+            }
+
+            emptyText.classList.add("hidden");
+            listContainer.innerHTML = '';
+
+            scanHistory.forEach((item) => {
+                const div = document.createElement("div");
+                div.className = `p-2.5 rounded-xl border flex items-center justify-between text-xs cursor-pointer transition ${
+                    item.isFound 
+                        ? 'bg-slate-800/80 border-slate-700 hover:border-brand-500' 
+                        : 'bg-red-950/20 border-red-900/40 opacity-75'
+                }`;
+
+                div.onclick = () => {
+                    document.getElementById("manualSearchInput").value = item.code;
+                    lookupItemCode(item.code);
+                };
+
+                div.innerHTML = `
+                    <div class="flex items-center gap-2.5 truncate max-w-[70%]">
+                        <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                            item.isFound ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+                        }">
+                            <i class="fa-solid ${item.isFound ? 'fa-check' : 'fa-xmark'} text-xs"></i>
+                        </div>
+                        <div class="truncate">
+                            <p class="font-mono font-bold text-slate-200 truncate">${item.code}</p>
+                            <p class="text-[10px] text-slate-400 truncate">${item.name}</p>
+                        </div>
+                    </div>
+                    <div class="text-right shrink-0">
+                        ${item.isFound ? `<span class="font-mono font-bold text-amber-400 block">${item.totalQty} qty</span>` : '<span class="text-red-400 text-[10px]">No Match</span>'}
+                        <span class="text-[9px] text-slate-500 font-mono">${item.timestamp}</span>
+                    </div>
+                `;
+
+                listContainer.appendChild(div);
+            });
+        }
+
+        function clearScanHistory() {
+            scanHistory = [];
+            renderHistoryUI();
+            showToast("History Cleared", "Scan history log cleared.", "info");
+        }
+
+        // Dynamic Toast Banner Helper
+        let toastTimeout;
+        function showToast(title, message, type = 'info') {
+            clearTimeout(toastTimeout);
+            const toast = document.getElementById("toastAlert");
+            const icon = document.getElementById("toastIcon");
+            const titleEl = document.getElementById("toastTitle");
+            const msgEl = document.getElementById("toastMessage");
+
+            titleEl.innerText = title;
+            msgEl.innerText = message;
+
+            // Reset classes
+            toast.className = "rounded-xl p-3 border flex items-center justify-between transition-all duration-300 shadow-lg ";
+
+            if (type === 'success') {
+                toast.classList.add("bg-emerald-950/80", "border-emerald-500/40", "text-emerald-200");
+                icon.className = "fa-solid fa-circle-check text-emerald-400 text-base";
+            } else if (type === 'error') {
+                toast.classList.add("bg-red-950/80", "border-red-500/40", "text-red-200");
+                icon.className = "fa-solid fa-triangle-exclamation text-red-400 text-base";
+            } else {
+                toast.classList.add("bg-brand-950/80", "border-brand-500/40", "text-brand-200");
+                icon.className = "fa-solid fa-circle-info text-brand-400 text-base";
+            }
+
+            toast.classList.remove("hidden");
+
+            toastTimeout = setTimeout(() => {
+                hideToast();
+            }, 4000);
+        }
+
+        function hideToast() {
+            document.getElementById("toastAlert").classList.add("hidden");
+        }
+
+        // Auto Load Demo Data on First Visit for Instant Testing
+        window.addEventListener("DOMContentLoaded", () => {
+            loadDemoData();
+        });
+    </script>
+</body>
+</html>
