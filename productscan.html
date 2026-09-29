@@ -2,471 +2,333 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Scan & Stock Inspector</title>
-    <!-- Tailwind CSS for UI Layout -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Physical Stock Scan & Inspector</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        body { background: #0f172a; color: #f8fafc; }
+        .app-shell { width: 100%; max-width: 640px; margin: 0 auto; min-height: 100vh; }
+        #reader video { border-radius: 12px; object-fit: cover; }
+    </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen font-sans p-4 md:p-8">
+<body class="font-sans antialiased">
 
-    <div class="max-w-7xl mx-auto space-y-8">
+<div class="app-shell flex flex-col min-h-screen pb-10">
+    
+    <!-- Navigation Header -->
+    <header class="bg-slate-900 border-b border-slate-800 p-3.5 flex items-center justify-between sticky top-0 z-50 shadow-lg">
+        <div class="flex items-center gap-2">
+            <a href="index.html" class="p-1 text-slate-400 hover:text-white flex items-center gap-1 text-xs font-semibold transition-colors">
+                <span>◀</span>
+                <span>Back</span>
+            </a>
+            <h1 class="text-sm font-bold ml-2 text-white">Physical Stock Inspector</h1>
+        </div>
+        <div id="syncBadge" class="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2.5 py-1 rounded-full font-mono">
+            Loading Cache…
+        </div>
+    </header>
+
+    <main class="flex-1 p-4 space-y-5">
         
-        <!-- Header -->
-        <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
-            <div>
-                <h1 class="text-3xl font-extrabold tracking-tight text-white flex items-center gap-3">
-                    <i class="fa-solid fa-barcode text-indigo-500"></i> Stock Inspector & Product Scan
-                </h1>
-                <p class="text-slate-400 text-sm mt-1">Scan item codes or barcodes to inspect location-wise physical stock and valuation metrics.</p>
-            </div>
-            <div id="syncStatus" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold self-start md:self-auto">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Inventory Synced
-            </div>
-        </header>
+        <!-- Live Camera Viewport -->
+        <div class="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl relative">
+            <div id="reader" class="w-full"></div>
+        </div>
 
-        <!-- Main Scanner Bar -->
-        <section class="bg-slate-800/80 border border-slate-700 rounded-xl p-6 shadow-2xl backdrop-blur-sm">
-            <label for="scanInput" class="block text-sm font-semibold text-slate-300 mb-2">
-                Scan Barcode or Enter Item Code / Name
-            </label>
-            <div class="relative flex items-center">
-                <i class="fa-solid fa-qrcode absolute left-4 text-slate-400 text-xl"></i>
-                <input 
-                    type="text" 
-                    id="scanInput" 
-                    autofocus 
-                    placeholder="Scan barcode or type item code (e.g., 43.37OP106PAS83/84)..."
-                    class="w-full bg-slate-900 border-2 border-indigo-500/50 focus:border-indigo-400 rounded-lg pl-12 pr-28 py-4 text-lg text-white placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 transition-all"
-                />
-                <button 
-                    onclick="handleManualSearch()" 
-                    class="absolute right-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-md transition-colors shadow-lg">
-                    Inspect
-                </button>
-            </div>
-            <p class="text-xs text-slate-500 mt-2 flex items-center gap-1">
-                <i class="fa-solid fa-circle-info"></i> Scanner auto-detects input. Press Enter or scan continuously.
-            </p>
-        </section>
+        <!-- Manual Lookup Bar -->
+        <div class="flex gap-2">
+            <input 
+                type="text" 
+                id="manualInput" 
+                placeholder="Scan barcode or enter Item Code / Name / Batch ID…" 
+                class="flex-1 px-3.5 py-2.5 text-xs bg-slate-900 border border-slate-700 text-white rounded-xl outline-none focus:border-indigo-500 transition-colors placeholder-slate-500"
+            />
+            <button 
+                onclick="searchManual()" 
+                class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl transition-colors shadow-md">
+                Inspect
+            </button>
+        </div>
 
-        <!-- Product Stock Detail Display -->
-        <section id="productDetailContainer" class="hidden space-y-6">
-            <div class="bg-slate-800/90 border border-slate-700 rounded-xl overflow-hidden shadow-xl">
-                <!-- Product Metadata Banner -->
-                <div class="bg-slate-800 border-b border-slate-700 p-6 flex flex-col lg:flex-row justify-between gap-6">
-                    <div class="space-y-2">
-                        <div class="flex items-center gap-3 flex-wrap">
-                            <span id="pCategory" class="px-2.5 py-1 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-semibold uppercase tracking-wider">CHARGER</span>
-                            <span id="pMainGroup" class="px-2.5 py-1 rounded bg-slate-700 text-slate-300 text-xs font-semibold uppercase tracking-wider">CHARGER SET</span>
-                            <span id="pSupplier" class="px-2.5 py-1 rounded bg-slate-700/50 text-slate-400 text-xs font-medium">Supplier: WIWU NWPAL</span>
-                        </div>
-                        <h2 id="pName" class="text-2xl font-bold text-white tracking-tight">APPLE HC 14PM 20W 3 PIN CHARGER</h2>
-                        <div class="flex items-center gap-4 text-sm text-slate-400">
-                            <span>Item Code: <strong id="pCode" class="text-slate-200">43.37OP106PAS83/84</strong></span>
-                            <span>|</span>
-                            <span>Unit: <strong id="pUnit" class="text-slate-200">Pcs.</strong></span>
-                        </div>
-                    </div>
-
-                    <!-- Valuation Summary Card -->
-                    <div class="flex gap-4 bg-slate-900/80 p-4 rounded-lg border border-slate-700/60 self-start">
-                        <div class="pr-4 border-r border-slate-700">
-                            <span class="text-xs uppercase text-slate-400 font-semibold block mb-1">Unit Rate</span>
-                            <span class="text-xl font-bold text-slate-100">NPR <span id="pRate">1,592.92</span></span>
-                        </div>
-                        <div class="pr-4 border-r border-slate-700">
-                            <span class="text-xs uppercase text-slate-400 font-semibold block mb-1">Total Qty</span>
-                            <span class="text-xl font-bold text-indigo-400"><span id="pTotalQty">6</span> Pcs.</span>
-                        </div>
-                        <div>
-                            <span class="text-xs uppercase text-slate-400 font-semibold block mb-1">Stock Valuation</span>
-                            <span class="text-xl font-bold text-emerald-400">NPR <span id="pTotalValue">9,557.52</span></span>
-                        </div>
-                    </div>
+        <!-- Scanned Item Card -->
+        <div id="resultCard" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-4">
+            <!-- Item Header -->
+            <div class="border-b border-slate-800 pb-3">
+                <div class="flex items-center justify-between gap-2 mb-1">
+                    <span id="resCategory" class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20"></span>
+                    <span id="resMainGroup" class="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded font-mono"></span>
                 </div>
-
-                <!-- Warehouse Physical Stock Breakdown -->
-                <div class="p-6 space-y-4">
-                    <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                        <i class="fa-solid fa-warehouse text-indigo-400"></i> Location-Wise Physical Stock Breakdown
-                    </h3>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3" id="warehouseGrid">
-                        <!-- Populated dynamic warehouse cards -->
-                    </div>
-                </div>
-
-                <!-- Batch Ledger Breakdown -->
-                <div class="border-t border-slate-700/80 p-6 space-y-3 bg-slate-900/40">
-                    <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                        <i class="fa-solid fa-boxes-stacked text-indigo-400"></i> Active Batches
-                    </h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-slate-300">
-                            <thead class="bg-slate-800 text-xs uppercase text-slate-400">
-                                <tr>
-                                    <th class="px-4 py-3 rounded-l">Batch No.</th>
-                                    <th class="px-4 py-3">Batch ID</th>
-                                    <th class="px-4 py-3">Location Allocation</th>
-                                    <th class="px-4 py-3 text-right">Batch Qty</th>
-                                    <th class="px-4 py-3 text-right">Rate</th>
-                                    <th class="px-4 py-3 text-right rounded-r">Total Value</th>
-                                </tr>
-                            </thead>
-                            <tbody id="batchTableBody" class="divide-y divide-slate-800">
-                                <!-- Dynamic Batch Rows -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Fallback Empty/Error State -->
-        <section id="notFoundCard" class="hidden bg-red-950/30 border border-red-500/30 rounded-xl p-8 text-center space-y-3">
-            <i class="fa-solid fa-triangle-exclamation text-red-400 text-4xl"></i>
-            <h3 class="text-lg font-bold text-red-200">Product Not Found</h3>
-            <p class="text-sm text-red-300/80">No stock record matching the scanned input was found in the physical stock inventory database.</p>
-        </section>
-
-        <!-- Overall Stock Statistics Dashboard -->
-        <section class="space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-chart-pie text-indigo-400"></i> Physical Stock Aggregate Statistics
-                </h2>
-                <span class="text-xs text-slate-400">Live Inventory Overview</span>
-            </div>
-
-            <!-- KPI Cards Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-slate-800/60 border border-slate-700/80 rounded-xl p-5 flex items-center gap-4">
-                    <div class="p-3.5 bg-indigo-500/10 text-indigo-400 rounded-lg border border-indigo-500/20">
-                        <i class="fa-solid fa-box text-2xl"></i>
-                    </div>
-                    <div>
-                        <span class="text-xs font-medium text-slate-400 block uppercase">Total Scanned Batches</span>
-                        <span id="statTotalBatches" class="text-2xl font-black text-white">0</span>
-                    </div>
-                </div>
-
-                <div class="bg-slate-800/60 border border-slate-700/80 rounded-xl p-5 flex items-center gap-4">
-                    <div class="p-3.5 bg-cyan-500/10 text-cyan-400 rounded-lg border border-cyan-500/20">
-                        <i class="fa-solid fa-cubes text-2xl"></i>
-                    </div>
-                    <div>
-                        <span class="text-xs font-medium text-slate-400 block uppercase">Aggregate Stock Qty</span>
-                        <span id="statTotalQty" class="text-2xl font-black text-white">0 Pcs.</span>
-                    </div>
-                </div>
-
-                <div class="bg-slate-800/60 border border-slate-700/80 rounded-xl p-5 flex items-center gap-4">
-                    <div class="p-3.5 bg-emerald-500/10 text-emerald-400 rounded-lg border border-emerald-500/20">
-                        <i class="fa-solid fa-money-bill-wave text-2xl"></i>
-                    </div>
-                    <div>
-                        <span class="text-xs font-medium text-slate-400 block uppercase">Total Inventory Value</span>
-                        <span id="statTotalValuation" class="text-2xl font-black text-emerald-400">NPR 0.00</span>
-                    </div>
-                </div>
-
-                <div class="bg-slate-800/60 border border-slate-700/80 rounded-xl p-5 flex items-center gap-4">
-                    <div class="p-3.5 bg-amber-500/10 text-amber-400 rounded-lg border border-amber-500/20">
-                        <i class="fa-solid fa-map-location-dot text-2xl"></i>
-                    </div>
-                    <div>
-                        <span class="text-xs font-medium text-slate-400 block uppercase">Active Warehouses</span>
-                        <span id="statActiveWarehouses" class="text-2xl font-black text-white">0 / 7</span>
-                    </div>
+                <h2 id="resName" class="text-base font-bold text-white leading-snug"></h2>
+                <div class="flex items-center gap-3 text-[11px] text-slate-400 mt-1">
+                    <span>Code: <strong id="resCode" class="text-slate-200 font-mono"></strong></span>
+                    <span>•</span>
+                    <span>Supplier: <strong id="resSupplier" class="text-slate-200"></strong></span>
                 </div>
             </div>
 
-            <!-- Warehouse Stock Distribution Table -->
-            <div class="bg-slate-800/60 border border-slate-700/80 rounded-xl p-6 space-y-4">
-                <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-300">
-                    Warehouse Inventory Distribution
+            <!-- Rate & Total Stock Summary -->
+            <div class="grid grid-cols-3 gap-2 text-center bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+                <div>
+                    <span class="text-[9px] text-slate-400 block font-semibold uppercase">Rate</span>
+                    <span id="resRate" class="font-bold text-slate-200 text-xs">0.00</span>
+                </div>
+                <div>
+                    <span class="text-[9px] text-slate-400 block font-semibold uppercase">4-WH Total Qty</span>
+                    <span id="res4WhQty" class="font-bold text-indigo-400 text-xs">0 Pcs</span>
+                </div>
+                <div>
+                    <span class="text-[9px] text-slate-400 block font-semibold uppercase">Valuation</span>
+                    <span id="res4WhVal" class="font-bold text-emerald-400 text-xs">0.00</span>
+                </div>
+            </div>
+
+            <!-- 4 Selected Warehouses Grid Breakdown -->
+            <div class="space-y-2">
+                <h3 class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Warehouse Breakdown</h3>
+                <div class="grid grid-cols-2 gap-2 text-xs" id="warehouseBreakdownGrid">
+                    <!-- Dynamic 4-warehouse stock cards -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Not Found Card -->
+        <div id="notFoundCard" class="hidden bg-red-950/30 border border-red-500/30 text-red-300 p-4 rounded-xl text-xs text-center font-semibold">
+            No item matching your scan was found in cached stock data!
+        </div>
+
+        <!-- Simple Statistics Section (Below Scanner) -->
+        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-4 shadow-xl">
+            <div class="border-b border-slate-800 pb-2 flex items-center justify-between">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                    <span>📊</span> Physical Stock Summary Statistics
                 </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="statWarehouseBreakdown">
-                    <!-- Dynamic Aggregated Warehouses -->
+                <span class="text-[9px] text-slate-500">4 Warehouses Only</span>
+            </div>
+
+            <!-- Aggregate KPI Cards -->
+            <div class="grid grid-cols-2 gap-2.5">
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80">
+                    <span class="text-[9px] text-slate-400 block uppercase font-semibold">Total Stock Items</span>
+                    <span id="statTotalItems" class="text-base font-extrabold text-white">0</span>
+                </div>
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80">
+                    <span class="text-[9px] text-slate-400 block uppercase font-semibold">Aggregate Qty</span>
+                    <span id="statTotalQty" class="text-base font-extrabold text-indigo-400">0 Pcs</span>
+                </div>
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80 col-span-2">
+                    <span class="text-[9px] text-slate-400 block uppercase font-semibold">Total Stock Valuation</span>
+                    <span id="statTotalValue" class="text-lg font-black text-emerald-400">0.00</span>
+                </div>
+            </div>
+
+            <!-- Distribution across the 4 Warehouses -->
+            <div class="space-y-2">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Stock Distribution</span>
+                <div class="grid grid-cols-2 gap-2" id="statWarehouseGrid">
+                    <!-- Dynamic overall 4 warehouse stats -->
                 </div>
             </div>
         </section>
 
-    </div>
+    </main>
+</div>
 
-    <!-- Data Logic & Scanning Engine -->
-    <script>
-        // Sample dataset parsed from physical stock schema
-        const physicalStockData = [
-            {
-                itemCode: "43.37OP106PAS83/84",
-                batch: "43.37OP106PAS83/84",
-                batchId: "OP106PAS83/84",
-                itemName: "APPLE HC 14PM 20W 3 PIN CHARGER",
-                unit: "Pcs.",
-                supplier: "WIWU NWPAL",
-                warehouses: {
-                    "Chalan Warehouse": 0,
-                    "CITY CENTER WAREHOUSE": 0,
-                    "Jawalakhel A": 1,
-                    "Jawalakhel B": 0,
-                    "Jawalakhel C": 0,
-                    "Jawalakhel D": 0,
-                    "Main Warehouse": 0
-                },
-                totalStockQty: 1,
-                rate: 1592.92,
-                totalStockValue: 1592.92,
-                mainGroup: "CHARGER SET",
-                subGroupA: "",
-                subGroupB: "",
-                subGroupC: "",
-                category: "CHARGER"
-            },
-            {
-                itemCode: "43.37OP107PAS83/84",
-                batch: "43.37OP107PAS83/84",
-                batchId: "OP107PAS83/84",
-                itemName: "APPLE HC 14PM 20W 3 PIN CHARGER",
-                unit: "Pcs.",
-                supplier: "WIWU NWPAL",
-                warehouses: {
-                    "Chalan Warehouse": 0,
-                    "CITY CENTER WAREHOUSE": 0,
-                    "Jawalakhel A": 0,
-                    "Jawalakhel B": 1,
-                    "Jawalakhel C": 0,
-                    "Jawalakhel D": 0,
-                    "Main Warehouse": 0
-                },
-                totalStockQty: 1,
-                rate: 1592.92,
-                totalStockValue: 1592.92,
-                mainGroup: "CHARGER SET",
-                subGroupA: "",
-                subGroupB: "",
-                subGroupC: "",
-                category: "CHARGER"
-            },
-            {
-                itemCode: "43.37OP120PAS83/84",
-                batch: "43.37OP120PAS83/84",
-                batchId: "OP120PAS83/84",
-                itemName: "APPLE HC 14PM 20W 3 PIN CHARGER",
-                unit: "Pcs.",
-                supplier: "WIWU NWPAL",
-                warehouses: {
-                    "Chalan Warehouse": 0,
-                    "CITY CENTER WAREHOUSE": 0,
-                    "Jawalakhel A": 0,
-                    "Jawalakhel B": 0,
-                    "Jawalakhel C": 4,
-                    "Jawalakhel D": 0,
-                    "Main Warehouse": 0
-                },
-                totalStockQty: 4,
-                rate: 1592.92,
-                totalStockValue: 6371.68,
-                mainGroup: "CHARGER SET",
-                subGroupA: "",
-                subGroupB: "",
-                subGroupC: "",
-                category: "CHARGER"
+<script>
+    let rawPhysicalProducts = [];
+
+    // The 4 requested target warehouses and flexible key matchers
+    const TARGET_WAREHOUSES = [
+        { id: 'main', name: 'Main Warehouse', matchers: ['main warehouse', 'main'] },
+        { id: 'wh_a', name: 'Warehouse A', matchers: ['jawalakhel a', 'warehouse a'] },
+        { id: 'wh_b', name: 'Warehouse B', matchers: ['jawalakhel b', 'warehouse b'] },
+        { id: 'city', name: 'City Center', matchers: ['city center warehouse', 'city center'] }
+    ];
+
+    // Helper: Safely get field value regardless of exact letter casing or key naming
+    function getProp(obj, matchers) {
+        if (!obj) return '';
+        const keys = Object.keys(obj);
+        for (let m of matchers) {
+            const found = keys.find(k => k.toLowerCase().trim() === m.toLowerCase().trim());
+            if (found && obj[found] !== undefined) return obj[found];
+        }
+        for (let m of matchers) {
+            const found = keys.find(k => k.toLowerCase().trim().includes(m.toLowerCase().trim()));
+            if (found && obj[found] !== undefined) return obj[found];
+        }
+        return '';
+    }
+
+    // Helper: Get Qty for specific warehouse
+    function getWhQty(item, whId) {
+        const whDef = TARGET_WAREHOUSES.find(w => w.id === whId);
+        if (!whDef) return 0;
+        const valStr = String(getProp(item, whDef.matchers) || '0').replace(/[^0-9.-]+/g, '');
+        const val = parseFloat(valStr);
+        return isNaN(val) ? 0 : val;
+    }
+
+    function formatNumber(num) {
+        return (num || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // Load data cached from physical stock sheet
+    function loadCachedData() {
+        const raw = localStorage.getItem('inv_scan_products') || localStorage.getItem('inv_products');
+        const badge = document.getElementById('syncBadge');
+
+        if (raw) {
+            try {
+                rawPhysicalProducts = JSON.parse(raw);
+                badge.innerText = `${rawPhysicalProducts.length} Items Loaded`;
+                calculateGlobalStatistics();
+            } catch (e) {
+                console.error("Failed to parse cached stock data", e);
+                badge.innerText = "Cache Error";
             }
-        ];
+        } else {
+            badge.innerText = "No Data Cached";
+        }
+    }
 
-        const WAREHOUSE_LIST = [
-            "Chalan Warehouse",
-            "CITY CENTER WAREHOUSE",
-            "Jawalakhel A",
-            "Jawalakhel B",
-            "Jawalakhel C",
-            "Jawalakhel D",
-            "Main Warehouse"
-        ];
+    // Search and display scanned item
+    function lookupItem(query) {
+        if (!query) return;
+        const q = query.trim().toLowerCase();
 
-        // Format currency helper
-        const formatCurrency = (val) => new Intl.NumberFormat('en-NP', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
-
-        // Auto-scan listener
-        const scanInput = document.getElementById('scanInput');
-        let scanTimer;
-
-        scanInput.addEventListener('input', (e) => {
-            clearTimeout(scanTimer);
-            scanTimer = setTimeout(() => {
-                executeSearch(e.target.value.trim());
-            }, 300);
+        const matches = rawPhysicalProducts.filter(item => {
+            const code = String(getProp(item, ['item code', 'barcode', 'batch', 'batchid'])).toLowerCase();
+            const name = String(getProp(item, ['item name', 'name', 'product name'])).toLowerCase();
+            return code.includes(q) || name.includes(q);
         });
 
-        scanInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                clearTimeout(scanTimer);
-                executeSearch(e.target.value.trim());
-            }
-        });
+        const resultCard = document.getElementById('resultCard');
+        const notFoundCard = document.getElementById('notFoundCard');
 
-        function handleManualSearch() {
-            executeSearch(scanInput.value.trim());
-        }
+        if (matches.length > 0) {
+            const first = matches[0];
+            const name = getProp(first, ['item name', 'name', 'product name']) || 'Unnamed Product';
+            const code = getProp(first, ['item code', 'barcode', 'batchid', 'batch']) || 'N/A';
+            const supplier = getProp(first, ['supplier']) || 'N/A';
+            const category = getProp(first, ['category']) || 'General';
+            const mainGroup = getProp(first, ['main group']) || '';
+            const unit = getProp(first, ['units', 'unit']) || 'Pcs.';
+            const rate = parseFloat(String(getProp(first, ['rate', 'mrp', 'cost'])).replace(/[^0-9.-]+/g, '')) || 0;
 
-        function executeSearch(query) {
-            if (!query) {
-                hideResults();
-                return;
-            }
+            // Calculate aggregate totals across the 4 selected warehouses for all matching rows
+            let total4WhQty = 0;
+            let whTotals = { main: 0, wh_a: 0, wh_b: 0, city: 0 };
 
-            const cleanQuery = query.toLowerCase();
-            
-            // Match items by code, batch, or name
-            const matches = physicalStockData.filter(item => 
-                item.itemCode.toLowerCase().includes(cleanQuery) ||
-                item.batchId.toLowerCase().includes(cleanQuery) ||
-                item.itemName.toLowerCase().includes(cleanQuery)
-            );
-
-            if (matches.length > 0) {
-                renderProductDetails(matches);
-            } else {
-                showNotFound();
-            }
-        }
-
-        function renderProductDetails(matches) {
-            document.getElementById('notFoundCard').classList.add('hidden');
-            document.getElementById('productDetailContainer').classList.remove('hidden');
-
-            const primary = matches[0];
-            document.getElementById('pName').innerText = primary.itemName;
-            document.getElementById('pCode').innerText = primary.itemCode;
-            document.getElementById('pUnit').innerText = primary.unit;
-            document.getElementById('pCategory').innerText = primary.category || 'N/A';
-            document.getElementById('pMainGroup').innerText = primary.mainGroup || 'N/A';
-            document.getElementById('pSupplier').innerText = `Supplier: ${primary.supplier || 'N/A'}`;
-            document.getElementById('pRate').innerText = formatCurrency(primary.rate);
-
-            // Calculate aggregate across all matching batches
-            let aggregatedWarehouses = {};
-            WAREHOUSE_LIST.forEach(wh => aggregatedWarehouses[wh] = 0);
-
-            let totalQty = 0;
-            let totalVal = 0;
-
-            matches.forEach(item => {
-                totalQty += item.totalStockQty;
-                totalVal += item.totalStockValue;
-                WAREHOUSE_LIST.forEach(wh => {
-                    aggregatedWarehouses[wh] += (item.warehouses[wh] || 0);
+            matches.forEach(m => {
+                TARGET_WAREHOUSES.forEach(w => {
+                    const q = getWhQty(m, w.id);
+                    whTotals[w.id] += q;
+                    total4WhQty += q;
                 });
             });
 
-            document.getElementById('pTotalQty').innerText = totalQty;
-            document.getElementById('pTotalValue').innerText = formatCurrency(totalVal);
+            document.getElementById('resName').innerText = name;
+            document.getElementById('resCode').innerText = code;
+            document.getElementById('resSupplier').innerText = supplier;
+            document.getElementById('resCategory').innerText = category;
+            document.getElementById('resMainGroup').innerText = mainGroup;
+            document.getElementById('resRate').innerText = formatNumber(rate);
+            document.getElementById('res4WhQty').innerText = `${total4WhQty} ${unit}`;
+            document.getElementById('res4WhVal').innerText = formatNumber(total4WhQty * rate);
 
-            // Render Warehouse Grid Cards
-            const gridContainer = document.getElementById('warehouseGrid');
-            gridContainer.innerHTML = WAREHOUSE_LIST.map(wh => {
-                const qty = aggregatedWarehouses[wh];
+            // Render 4 Warehouse Stock Cards
+            const grid = document.getElementById('warehouseBreakdownGrid');
+            grid.innerHTML = TARGET_WAREHOUSES.map(w => {
+                const qty = whTotals[w.id];
                 const hasStock = qty > 0;
                 return `
-                    <div class="p-3 rounded-lg border text-center transition-all ${
-                        hasStock 
-                        ? 'bg-indigo-950/40 border-indigo-500/50 shadow-md shadow-indigo-500/10' 
-                        : 'bg-slate-900/40 border-slate-800 opacity-60'
-                    }">
-                        <span class="text-[11px] font-medium uppercase tracking-tight text-slate-400 block truncate" title="${wh}">${wh}</span>
-                        <span class="text-lg font-bold mt-1 block ${hasStock ? 'text-indigo-300' : 'text-slate-600'}">
-                            ${qty} <span class="text-xs font-normal text-slate-500">${primary.unit}</span>
+                    <div class="p-2.5 rounded-xl border ${hasStock ? 'bg-indigo-950/40 border-indigo-500/40' : 'bg-slate-950/40 border-slate-800'}">
+                        <span class="text-[9px] uppercase font-semibold text-slate-400 block truncate">${w.name}</span>
+                        <span class="text-sm font-bold ${hasStock ? 'text-indigo-300' : 'text-slate-600'} block mt-0.5">
+                            ${qty} <span class="text-[10px] font-normal text-slate-500">${unit}</span>
                         </span>
                     </div>
                 `;
             }).join('');
 
-            // Render Batch Table
-            const batchTableBody = document.getElementById('batchTableBody');
-            batchTableBody.innerHTML = matches.map(item => {
-                // Active warehouses for this specific batch
-                const activeLocations = WAREHOUSE_LIST
-                    .filter(w => item.warehouses[w] > 0)
-                    .map(w => `${w} (${item.warehouses[w]})`)
-                    .join(', ') || 'None';
-
-                return `
-                    <tr class="hover:bg-slate-800/50 transition-colors">
-                        <td class="px-4 py-3 font-mono text-xs text-indigo-300">${item.batch}</td>
-                        <td class="px-4 py-3 font-mono text-xs text-slate-300">${item.batchId}</td>
-                        <td class="px-4 py-3 text-xs text-slate-400">${activeLocations}</td>
-                        <td class="px-4 py-3 text-right font-semibold text-slate-200">${item.totalStockQty}</td>
-                        <td class="px-4 py-3 text-right text-slate-400">${formatCurrency(item.rate)}</td>
-                        <td class="px-4 py-3 text-right font-bold text-emerald-400">${formatCurrency(item.totalStockValue)}</td>
-                    </tr>
-                `;
-            }).join('');
+            resultCard.classList.remove('hidden');
+            notFoundCard.classList.add('hidden');
+        } else {
+            resultCard.classList.add('hidden');
+            notFoundCard.classList.remove('hidden');
         }
+    }
 
-        function showNotFound() {
-            document.getElementById('productDetailContainer').classList.add('hidden');
-            document.getElementById('notFoundCard').classList.remove('hidden');
-        }
+    // Calculate simple statistics for the bottom section
+    function calculateGlobalStatistics() {
+        let totalItems = rawPhysicalProducts.length;
+        let aggregateQty = 0;
+        let aggregateValuation = 0;
+        let whAggregates = { main: 0, wh_a: 0, wh_b: 0, city: 0 };
 
-        function hideResults() {
-            document.getElementById('productDetailContainer').classList.add('hidden');
-            document.getElementById('notFoundCard').classList.add('hidden');
-        }
+        rawPhysicalProducts.forEach(item => {
+            const rate = parseFloat(String(getProp(item, ['rate', 'mrp', 'cost'])).replace(/[^0-9.-]+/g, '')) || 0;
+            let rowQty = 0;
 
-        // Global Statistics Calculator
-        function calculateOverallStatistics() {
-            let totalBatches = physicalStockData.length;
-            let totalQty = 0;
-            let totalValuation = 0;
-            let warehouseTotals = {};
-
-            WAREHOUSE_LIST.forEach(wh => warehouseTotals[wh] = 0);
-
-            physicalStockData.forEach(item => {
-                totalQty += item.totalStockQty;
-                totalValuation += item.totalStockValue;
-
-                WAREHOUSE_LIST.forEach(wh => {
-                    warehouseTotals[wh] += (item.warehouses[wh] || 0);
-                });
+            TARGET_WAREHOUSES.forEach(w => {
+                const q = getWhQty(item, w.id);
+                whAggregates[w.id] += q;
+                rowQty += q;
             });
 
-            let activeWarehouses = Object.values(warehouseTotals).filter(qty => qty > 0).length;
-
-            // Render KPIs
-            document.getElementById('statTotalBatches').innerText = totalBatches;
-            document.getElementById('statTotalQty').innerText = `${totalQty} Pcs.`;
-            document.getElementById('statTotalValuation').innerText = `NPR ${formatCurrency(totalValuation)}`;
-            document.getElementById('statActiveWarehouses').innerText = `${activeWarehouses} / ${WAREHOUSE_LIST.length}`;
-
-            // Render Overall Warehouse Cards
-            const breakdownContainer = document.getElementById('statWarehouseBreakdown');
-            breakdownContainer.innerHTML = WAREHOUSE_LIST.map(wh => {
-                const qty = warehouseTotals[wh];
-                const pct = totalQty > 0 ? ((qty / totalQty) * 100).toFixed(1) : 0;
-                return `
-                    <div class="bg-slate-900/60 border border-slate-700/50 p-4 rounded-lg flex flex-col justify-between space-y-2">
-                        <div class="flex justify-between items-start">
-                            <span class="text-xs text-slate-400 font-semibold truncate pr-2" title="${wh}">${wh}</span>
-                            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-indigo-400 font-mono">${pct}%</span>
-                        </div>
-                        <div class="flex justify-between items-baseline">
-                            <span class="text-xl font-bold text-slate-100">${qty}</span>
-                            <span class="text-xs text-slate-500">Units</span>
-                        </div>
-                        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                            <div class="bg-indigo-500 h-full rounded-full" style="width: ${pct}%"></div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // Initialize dashboard statistics on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            calculateOverallStatistics();
+            aggregateQty += rowQty;
+            aggregateValuation += (rowQty * rate);
         });
-    </script>
+
+        document.getElementById('statTotalItems').innerText = totalItems;
+        document.getElementById('statTotalQty').innerText = `${aggregateQty} Pcs`;
+        document.getElementById('statTotalValue').innerText = formatNumber(aggregateValuation);
+
+        const statGrid = document.getElementById('statWarehouseGrid');
+        statGrid.innerHTML = TARGET_WAREHOUSES.map(w => {
+            const qty = whAggregates[w.id];
+            const pct = aggregateQty > 0 ? ((qty / aggregateQty) * 100).toFixed(1) : 0;
+            return `
+                <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[9px] text-slate-400 font-semibold truncate">${w.name}</span>
+                        <span class="text-[8px] px-1.5 py-0.2 bg-slate-800 text-indigo-400 font-mono rounded">${pct}%</span>
+                    </div>
+                    <span class="text-sm font-bold text-slate-200 block">${qty} Pcs</span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function searchManual() {
+        const val = document.getElementById('manualInput').value;
+        lookupItem(val);
+    }
+
+    // Input debounce listener for barcode guns & manual typing
+    let inputDebounce;
+    document.getElementById('manualInput').addEventListener('input', (e) => {
+        clearTimeout(inputDebounce);
+        inputDebounce = setTimeout(() => lookupItem(e.target.value), 300);
+    });
+
+    window.addEventListener('load', () => {
+        loadCachedData();
+
+        // Start HTML5 Camera Barcode Reader
+        const html5QrCode = new Html5Qrcode("reader");
+        const qrCodeSuccessCallback = (decodedText) => {
+            document.getElementById('manualInput').value = decodedText;
+            lookupItem(decodedText);
+        };
+        const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+
+        html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback)
+        .catch(err => console.warn("Camera access failed or disabled:", err));
+    });
+</script>
+
 </body>
 </html>
