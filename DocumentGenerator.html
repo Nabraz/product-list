@@ -44,6 +44,20 @@
         }
         .app-header h1 { font-size: 15px; line-height: 1.2; color: #111827; }
         .app-header p { margin-top: 2px; color: #9ca3af; font-size: 10px; }
+        .branch-picker {
+            min-height: 40px;
+            max-width: 150px;
+            margin-left: auto;
+            padding: 8px 28px 8px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: #f9fafb;
+            color: #374151;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
         /* ========== TAB NAVIGATION ========== */
         .tabs-container {
@@ -469,6 +483,13 @@
     <header class="app-header">
         <a class="home-link" href="index.html" aria-label="Home"><span aria-hidden="true">⌂</span><span>Home</span></a>
         <div><h1>Document Generator</h1><p>Receipts and quotations</p></div>
+        <label class="sr-only" for="branchSelect">Document branch</label>
+        <select id="branchSelect" class="branch-picker" onchange="setDocumentBranch(this.value)">
+            <option value="Kamalpokhari">Kamalpokhari</option>
+            <option value="Jawalakhel">Jawalakhel</option>
+            <option value="City Center">City Center</option>
+            <option value="Bishal Bazar">Bishal Bazar</option>
+        </select>
     </header>
 
     <nav class="tabs-container" aria-label="Document type">
@@ -536,7 +557,7 @@
                     <div class="receipt-half">
                         <div class="d-header">
                             <div class="d-company">Pranish Apple Store and Service Centre Pvt. Ltd.</div>
-                            <div class="d-sub">KamalPokhari | Phone No. : 9708080830</div>
+                            <div class="d-sub"><span class="document-branch">Kamalpokhari</span> | Phone No. : 9708080830</div>
                             <div class="d-sub">Email: Pranishstorejawalakhel@gmail.com</div>
                         </div>
                         <div class="d-pan">
@@ -586,7 +607,7 @@
                     <div class="receipt-half">
                         <div class="d-header">
                             <div class="d-company">Pranish Apple Store and Service Centre Pvt. Ltd.</div>
-                            <div class="d-sub">KamalPokhari | Phone No. : 9708080830</div>
+                            <div class="d-sub"><span class="document-branch">Kamalpokhari</span> | Phone No. : 9708080830</div>
                             <div class="d-sub">Email: Pranishstorejawalakhel@gmail.com</div>
                         </div>
                         <div class="d-pan">
@@ -670,7 +691,7 @@
                 <div class="document doc-quotation">
                     <div class="d-header">
                         <div class="d-company">Pranish Apple Store and Service Centre Pvt. Ltd.</div>
-                        <div class="d-sub">KamalPokhari | Phone No. : 9708080830</div>
+                        <div class="d-sub"><span class="document-branch">Kamalpokhari</span> | Phone No. : 9708080830</div>
                         <div class="d-sub">Email: Pranishstorejawalakhel@gmail.com</div>
                     </div>
                     <div class="d-pan">
@@ -773,7 +794,7 @@
                 <div class="document doc-emi">
                     <div class="d-header">
                         <div class="d-company">Pranish Apple Store and Service Centre Pvt. Ltd.</div>
-                        <div class="d-sub">KamalPokhari | Phone No. : 9708080830</div>
+                        <div class="d-sub"><span class="document-branch">Kamalpokhari</span> | Phone No. : 9708080830</div>
                         <div class="d-sub">Email: Pranishstorejawalakhel@gmail.com</div>
                     </div>
                     <div class="d-pan">
@@ -847,6 +868,23 @@
             if(btn) btn.classList.add('active');
         }
 
+        function setDocumentBranch(branch) {
+            const allowedBranches = ['Kamalpokhari', 'Jawalakhel', 'City Center', 'Bishal Bazar'];
+            if (!allowedBranches.includes(branch)) return;
+            localStorage.setItem('documentBranch', branch);
+            document.querySelectorAll('.document-branch').forEach(element => {
+                element.textContent = branch;
+            });
+        }
+
+        function loadDocumentBranch() {
+            const savedBranch = localStorage.getItem('documentBranch') || 'Kamalpokhari';
+            const select = document.getElementById('branchSelect');
+            select.value = savedBranch;
+            if (select.value !== savedBranch) select.value = 'Kamalpokhari';
+            setDocumentBranch(select.value);
+        }
+
         async function printDocument(type) {
             const status = document.getElementById('printStatus');
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
@@ -869,8 +907,8 @@
             const originalStyle = preview.getAttribute('style');
             const fallbackWindow = window.open('about:blank', '_blank');
             preview.style.display = 'block';
-            preview.style.position = 'fixed';
-            preview.style.left = '-10000px';
+            preview.style.position = 'absolute';
+            preview.style.left = '0';
             preview.style.top = '0';
             preview.style.width = '210mm';
             preview.style.zIndex = '-1';
@@ -879,6 +917,8 @@
             status.classList.add('visible');
 
             try {
+                if (document.fonts?.ready) await document.fonts.ready;
+                await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
                 const voucher = document.getElementById(`${type.charAt(0)}_voucher`)?.value || type;
                 const filename = `${type}-${voucher.replace(/[^a-z0-9_-]+/gi, '-')}.pdf`;
                 const pdf = await html2pdf().set({
@@ -887,8 +927,9 @@
                     image: { type: 'jpeg', quality: 0.98 },
                     html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                    pagebreak: { mode: ['css', 'legacy'] }
+                    pagebreak: { mode: [] }
                 }).from(documentElement).toPdf().get('pdf');
+                while (pdf.getNumberOfPages() > 1) pdf.deletePage(pdf.getNumberOfPages());
                 const blob = pdf.output('blob');
                 const file = new File([blob], filename, { type: 'application/pdf' });
                 const url = URL.createObjectURL(blob);
@@ -1332,6 +1373,7 @@
         }
 
         window.onload = function() {
+            loadDocumentBranch();
             document.querySelectorAll('.track-r').forEach(el => el.addEventListener('input', () => updatePreview('receipt')));
             document.querySelectorAll('.track-q').forEach(el => el.addEventListener('input', () => updatePreview('quotation')));
             document.querySelectorAll('.track-e').forEach(el => el.addEventListener('input', () => updatePreview('emi')));
