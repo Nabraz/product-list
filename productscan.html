@@ -3,134 +3,280 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Physical Stock Scan & Inspector</title>
+    <title>Physical Stock Inspector</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
-        body { background: #0f172a; color: #f8fafc; }
-        .app-shell { width: 100%; max-width: 640px; margin: 0 auto; min-height: 100vh; }
-        #reader video { border-radius: 12px; object-fit: cover; }
+        body { background: #f0f2f5; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
+        .app-shell { width: 100%; max-width: 540px; margin: 0 auto; display: flex; flex-direction: column; min-height: 100vh; position: relative; }
+        main { padding-bottom: calc(84px + max(env(safe-area-inset-bottom), 20px)); }
+
+        /* Dense table */
+        .dense-table { font-size: 11px; border-collapse: collapse; width: 100%; }
+        .dense-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; padding: 5px 6px; background: #374151; color: #fff; font-weight: 700; text-align: left; }
+        .dense-table td { padding: 5px 6px; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
+        .dense-table tr:hover td { background: #f9fafb; }
+
+        /* Used phone two-row table */
+        .sh-table { font-size: 11px; border-collapse: collapse; width: 100%; }
+        .sh-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; padding: 5px 6px; background: #374151; color: #fff; font-weight: 700; text-align: left; }
+        .sh-table td { padding: 4px 6px; vertical-align: top; }
+        .sh-row-main td { border-bottom: none; }
+        .sh-row-main:hover td { background: #f9fafb; }
+        /* Gap between used phones */
+        .sh-row-sub td { border-bottom: 6px solid #f0f2f5; padding-top: 0; padding-bottom: 6px; background: #f9fafb; }
+        .sh-device-name { font-weight: 700; font-size: 12px; color: #000000; line-height: 1.3; }
+        .brand-cell .brand-name { color: #1d4ed8; font-weight: 700; font-size: 11px; display: block; line-height: 1.2; }
+        .brand-cell .type-badge { color: #6b7280; font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-top: 1px; }
+        .mrp-cell { font-size: 11px; color: #1d4ed8; font-weight: 700; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
+        .cost-cell { font-size: 11px; color: #dc2626; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .product-name { font-size: 11px; color: #111827; font-weight: 500; line-height: 1.3; }
+        .dots-cost { color: #dc2626; letter-spacing: 2px; font-size: 9px; }
+
+        @media (min-width: 1024px) {
+            body { padding: 24px; }
+            .app-shell { max-width: 1280px; }
+            header {
+                border-radius: 20px 20px 0 0;
+                overflow: hidden;
+            }
+            main {
+                padding-bottom: calc(112px + max(env(safe-area-inset-bottom), 20px));
+            }
+            .summary-grid {
+                display: grid !important;
+                grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+                gap: 12px;
+                padding: 16px;
+            }
+            .toolbar {
+                flex-wrap: wrap;
+                gap: 10px;
+                padding: 14px 16px;
+            }
+            .toolbar input,
+            .toolbar select {
+                min-height: 42px;
+                font-size: 13px !important;
+            }
+            .toolbar select {
+                max-width: none !important;
+            }
+            .toolbar button {
+                min-height: 42px;
+                font-size: 12px !important;
+            }
+            .analytics-layout,
+            .summary-layout {
+                padding: 20px;
+            }
+            .analytics-layout > .grid.grid-cols-2 {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+            .analytics-charts {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 16px;
+            }
+            .analytics-charts > * {
+                margin-top: 0 !important;
+            }
+            .dense-table { font-size: 12px; }
+            .dense-table th { font-size: 10px; padding: 7px 8px; }
+            .dense-table td { padding: 7px 8px; }
+            .sh-table { font-size: 12px; }
+            .sh-device-name { font-size: 13px; }
+            .app-nav {
+                max-width: 1180px !important;
+                padding-bottom: 24px;
+            }
+            .app-nav > div {
+                max-width: 920px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+        }
+
+        #reader video { border-radius: 10px; object-fit: cover; }
     </style>
 </head>
-<body class="font-sans antialiased">
+<body>
 
-<div class="app-shell flex flex-col min-h-screen pb-10">
+<div class="app-shell border-x border-gray-200 bg-white shadow-xl">
     
-    <!-- Navigation Header -->
-    <header class="bg-slate-900 border-b border-slate-800 p-3.5 flex items-center justify-between sticky top-0 z-50 shadow-lg">
+    <!-- Top Navigation Header -->
+    <header class="bg-gray-900 text-white p-3.5 flex items-center justify-between sticky top-0 z-50 shadow-md">
         <div class="flex items-center gap-2">
-            <a href="index.html" class="p-1 text-slate-400 hover:text-white flex items-center gap-1 text-xs font-semibold transition-colors">
-                <span>◀</span>
-                <span>Back</span>
+            <a href="index.html" class="p-1 text-gray-300 hover:text-white flex items-center gap-1 text-xs font-semibold transition-colors" aria-label="Home">
+                <span aria-hidden="true">⌂</span>
+                <span>Home</span>
             </a>
-            <h1 class="text-sm font-bold ml-2 text-white">Physical Stock Inspector</h1>
+            <h1 class="text-sm font-bold ml-2">Physical Stock Inspector</h1>
         </div>
-        <div id="syncBadge" class="text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-2.5 py-1 rounded-full font-mono">
+        <div id="syncBadge" class="text-[10px] bg-gray-800 text-gray-300 border border-gray-700 px-2.5 py-1 rounded-full font-mono">
             Checking Cache…
         </div>
     </header>
 
-    <main class="flex-1 p-4 space-y-5">
+    <main class="p-4 space-y-4">
 
-        <!-- Diagnostic Debug Box (Visible if 0 Items Loaded) -->
-        <div id="debugKeys" class="hidden"></div>
-        
-        <!-- Live Camera Viewport -->
-        <div class="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl relative">
-            <div id="reader" class="w-full"></div>
+        <!-- Camera Scanner Viewport Card -->
+        <div class="bg-gray-100 border border-gray-300 rounded-xl p-2 shadow-inner relative">
+            <div id="reader" class="w-full bg-black rounded-lg overflow-hidden"></div>
         </div>
 
-        <!-- Manual Lookup Bar -->
-        <div class="flex gap-2">
-            <input 
-                type="text" 
-                id="manualInput" 
-                placeholder="Scan barcode or enter Item Code / Name / Batch ID…" 
-                class="flex-1 px-3.5 py-2.5 text-xs bg-slate-900 border border-slate-700 text-white rounded-xl outline-none focus:border-indigo-500 transition-colors placeholder-slate-500"
-            />
-            <button 
-                onclick="searchManual()" 
-                class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl transition-colors shadow-md">
-                Inspect
-            </button>
+        <!-- SEARCH SECTION 1: STRICT ITEM CODE SEARCH -->
+        <div class="bg-white border border-gray-200 rounded-xl p-3.5 space-y-2 shadow-sm">
+            <label class="text-[10px] font-bold uppercase tracking-wider text-indigo-700 block">
+                🏷️ Item Code Search (Aggregates All Batches)
+            </label>
+            <div class="flex gap-2 toolbar">
+                <input 
+                    type="text" 
+                    id="codeInput" 
+                    placeholder="Enter exact Item Code (e.g. 111.1)…" 
+                    class="flex-1 px-3 py-2 text-xs bg-gray-50 border border-gray-300 text-gray-900 rounded-lg outline-none focus:border-indigo-600 font-mono transition-colors"
+                />
+                <button 
+                    onclick="searchByCodeManual()" 
+                    class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-colors shadow flex items-center gap-1 shrink-0">
+                    <span>Inspect Code</span>
+                </button>
+            </div>
         </div>
 
-        <!-- Scanned Item Card -->
-        <div id="resultCard" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-4">
-            <!-- Item Header -->
-            <div class="border-b border-slate-800 pb-3">
+        <!-- SEARCH SECTION 2: FIELD & DESCRIPTION SEARCH -->
+        <div class="bg-white border border-gray-200 rounded-xl p-3.5 space-y-2 shadow-sm">
+            <label class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">
+                🔍 Description Search (Order-Independent Tokens)
+            </label>
+            <div class="flex gap-2 toolbar">
+                <input 
+                    type="text" 
+                    id="fieldSearchInput" 
+                    placeholder="e.g. 'cable c to c' or 'apple c to c org'…" 
+                    class="flex-1 px-3 py-2 text-xs bg-gray-50 border border-gray-300 text-gray-900 rounded-lg outline-none focus:border-emerald-600 transition-colors"
+                />
+                <button 
+                    onclick="searchByFieldsManual()" 
+                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors shadow flex items-center gap-1 shrink-0">
+                    <span>Search Fields</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Candidate Items List Card (Multiple Description Matches) -->
+        <div id="candidateListCard" class="hidden bg-white border border-gray-200 rounded-xl p-3.5 space-y-2 shadow-md">
+            <div class="flex justify-between items-center border-b border-gray-200 pb-2">
+                <span id="candidateCount" class="text-[11px] font-bold text-gray-800">Matching Products</span>
+                <span class="text-[9px] text-gray-500">Tap item to inspect multi-batch stock</span>
+            </div>
+            <div id="candidateItemsContainer" class="max-h-56 overflow-y-auto space-y-1.5 pr-1">
+                <!-- Dynamic candidate list items -->
+            </div>
+        </div>
+
+        <!-- Scanned / Selected Consolidated Product Card -->
+        <div id="resultCard" class="hidden bg-white border border-gray-200 rounded-xl p-4 shadow-md space-y-4">
+            
+            <!-- Product Identification Header -->
+            <div class="border-b border-gray-200 pb-3">
                 <div class="flex items-center justify-between gap-2 mb-1">
-                    <span id="resCategory" class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20"></span>
-                    <span id="resMainGroup" class="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded font-mono"></span>
+                    <span id="resCategory" class="text-[10px] font-bold text-indigo-700 uppercase tracking-wider bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200"></span>
+                    <span id="resMainGroup" class="text-[10px] text-gray-600 bg-gray-100 px-2 py-0.5 rounded font-mono"></span>
                 </div>
-                <h2 id="resName" class="text-base font-bold text-white leading-snug"></h2>
-                <div class="flex items-center gap-3 text-[11px] text-slate-400 mt-1">
-                    <span>Code: <strong id="resCode" class="text-slate-200 font-mono"></strong></span>
+                <h2 id="resName" class="product-name text-sm font-bold text-gray-900 leading-snug"></h2>
+                <div class="flex items-center gap-3 text-[11px] text-gray-600 mt-1 flex-wrap">
+                    <span>Code: <strong id="resCode" class="text-gray-900 font-mono"></strong></span>
                     <span>•</span>
-                    <span>Supplier: <strong id="resSupplier" class="text-slate-200"></strong></span>
+                    <span>Supplier: <strong id="resSupplier" class="text-gray-900"></strong></span>
+                    <span>•</span>
+                    <span>Total Batches: <strong id="resBatchCount" class="text-indigo-600"></strong></span>
                 </div>
             </div>
 
-            <!-- Rate & Total Stock Summary -->
-            <div class="grid grid-cols-3 gap-2 text-center bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+            <!-- Total 4-Warehouse Stock Summary Metrics -->
+            <div class="grid grid-cols-3 gap-2 text-center bg-gray-50 p-3 rounded-xl border border-gray-200">
                 <div>
-                    <span class="text-[9px] text-slate-400 block font-semibold uppercase">Rate</span>
-                    <span id="resRate" class="font-bold text-slate-200 text-xs">0.00</span>
+                    <span class="text-[9px] text-gray-500 block font-semibold uppercase">Avg/Primary Rate</span>
+                    <span id="resRate" class="font-bold text-gray-800 text-xs">Rs. 0.00</span>
                 </div>
                 <div>
-                    <span class="text-[9px] text-slate-400 block font-semibold uppercase">4-WH Total Qty</span>
-                    <span id="res4WhQty" class="font-bold text-indigo-400 text-xs">0 Pcs</span>
+                    <span class="text-[9px] text-gray-500 block font-semibold uppercase">All Batches Qty</span>
+                    <span id="res4WhQty" class="font-bold text-indigo-700 text-xs">0 Pcs</span>
                 </div>
                 <div>
-                    <span class="text-[9px] text-slate-400 block font-semibold uppercase">Valuation</span>
-                    <span id="res4WhVal" class="font-bold text-emerald-400 text-xs">0.00</span>
+                    <span class="text-[9px] text-gray-500 block font-semibold uppercase">Total Value</span>
+                    <span id="res4WhVal" class="font-bold text-emerald-700 text-xs">Rs. 0.00</span>
                 </div>
             </div>
 
-            <!-- 4 Selected Warehouses Grid Breakdown -->
+            <!-- 4 Target Warehouses Consolidated Stock Grid -->
             <div class="space-y-2">
-                <h3 class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Warehouse Breakdown</h3>
+                <h3 class="text-[10px] font-bold uppercase tracking-wider text-gray-600">Consolidated Warehouse Distribution</h3>
                 <div class="grid grid-cols-2 gap-2 text-xs" id="warehouseBreakdownGrid">
-                    <!-- Dynamic 4-warehouse stock cards -->
+                    <!-- Dynamic total 4 warehouse aggregated cards -->
                 </div>
             </div>
+
+            <!-- Individual Batch Breakdown Table -->
+            <div class="space-y-2 pt-2 border-t border-gray-200">
+                <h3 class="text-[10px] font-bold uppercase tracking-wider text-gray-600">Batch Breakdown</h3>
+                <div class="overflow-x-auto rounded-lg border border-gray-200">
+                    <table class="dense-table">
+                        <thead>
+                            <tr>
+                                <th>Batch / ID</th>
+                                <th>Rate</th>
+                                <th>City Center</th>
+                                <th>JWL A</th>
+                                <th>JWL B</th>
+                                <th>Main WH</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="batchTableBody">
+                            <!-- Dynamic Batch Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
 
-        <!-- Not Found Card -->
-        <div id="notFoundCard" class="hidden bg-red-950/30 border border-red-500/30 text-red-300 p-4 rounded-xl text-xs text-center font-semibold">
-            No item matching your scan was found in cached stock data!
+        <!-- Not Found View Card -->
+        <div id="notFoundCard" class="hidden bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-xs text-center font-semibold">
+            No product matching your search criteria was found!
         </div>
 
-        <!-- Simple Statistics Section (Below Scanner) -->
-        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-4 shadow-xl">
-            <div class="border-b border-slate-800 pb-2 flex items-center justify-between">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+        <!-- Physical Stock Aggregate Summary Statistics -->
+        <section class="bg-white border border-gray-200 rounded-xl p-4 space-y-3 shadow-sm">
+            <div class="border-b border-gray-200 pb-2 flex items-center justify-between">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-gray-800 flex items-center gap-1.5">
                     <span>📊</span> Physical Stock Summary Statistics
                 </h3>
-                <span class="text-[9px] text-slate-500">4 Warehouses Only</span>
+                <span class="text-[9px] text-gray-500">4 Target Warehouses</span>
             </div>
 
-            <!-- Aggregate KPI Cards -->
-            <div class="grid grid-cols-2 gap-2.5">
-                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80">
-                    <span class="text-[9px] text-slate-400 block uppercase font-semibold">Total Stock Items</span>
-                    <span id="statTotalItems" class="text-base font-extrabold text-white">0</span>
+            <div class="summary-grid grid grid-cols-2 gap-2.5">
+                <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+                    <span class="text-[9px] text-gray-500 block uppercase font-semibold">Unique Item Codes</span>
+                    <span id="statTotalItems" class="text-sm font-extrabold text-gray-900">0</span>
                 </div>
-                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80">
-                    <span class="text-[9px] text-slate-400 block uppercase font-semibold">Aggregate Qty</span>
-                    <span id="statTotalQty" class="text-base font-extrabold text-indigo-400">0 Pcs</span>
+                <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+                    <span class="text-[9px] text-gray-500 block uppercase font-semibold">Aggregate Qty</span>
+                    <span id="statTotalQty" class="text-sm font-extrabold text-indigo-700">0 Pcs</span>
                 </div>
-                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80 col-span-2">
-                    <span class="text-[9px] text-slate-400 block uppercase font-semibold">Total Stock Valuation</span>
-                    <span id="statTotalValue" class="text-lg font-black text-emerald-400">0.00</span>
+                <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-200 col-span-2">
+                    <span class="text-[9px] text-gray-500 block uppercase font-semibold">Total Stock Valuation</span>
+                    <span id="statTotalValue" class="text-base font-black text-emerald-700">Rs. 0.00</span>
                 </div>
             </div>
 
-            <!-- Distribution across the 4 Warehouses -->
-            <div class="space-y-2">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Stock Distribution</span>
+            <div class="space-y-1.5">
+                <span class="text-[10px] font-bold text-gray-600 uppercase tracking-wider block">Warehouse Distribution</span>
                 <div class="grid grid-cols-2 gap-2" id="statWarehouseGrid">
-                    <!-- Dynamic overall 4 warehouse stats -->
+                    <!-- Global warehouse distribution breakdown -->
                 </div>
             </div>
         </section>
@@ -141,217 +287,300 @@
 <script>
     let rawPhysicalProducts = [];
 
-    // Restricted strictly to 4 target warehouses
     const TARGET_WAREHOUSES = [
-        { id: 'main', name: 'Main Warehouse', matchers: ['main warehouse', 'main'] },
-        { id: 'wh_a', name: 'Warehouse A', matchers: ['jawalakhel a', 'warehouse a'] },
-        { id: 'wh_b', name: 'Warehouse B', matchers: ['jawalakhel b', 'warehouse b'] },
-        { id: 'city', name: 'City Center', matchers: ['city center warehouse', 'city center'] }
+        { id: 'CITY CENTER WAREHOUSE', name: 'City Center Warehouse', short: 'City Center' },
+        { id: 'Jawalakhel A', name: 'Jawalakhel A', short: 'JWL A' },
+        { id: 'Jawalakhel B', name: 'Jawalakhel B', short: 'JWL B' },
+        { id: 'Main Warehouse', name: 'Main Warehouse', short: 'Main WH' }
     ];
-
-    function getProp(obj, matchers) {
-        if (!obj) return '';
-        const keys = Object.keys(obj);
-        for (let m of matchers) {
-            const found = keys.find(k => k.toLowerCase().trim() === m.toLowerCase().trim());
-            if (found && obj[found] !== undefined) return obj[found];
-        }
-        for (let m of matchers) {
-            const found = keys.find(k => k.toLowerCase().trim().includes(m.toLowerCase().trim()));
-            if (found && obj[found] !== undefined) return obj[found];
-        }
-        return '';
-    }
-
-    function getWhQty(item, whId) {
-        const whDef = TARGET_WAREHOUSES.find(w => w.id === whId);
-        if (!whDef) return 0;
-        const valStr = String(getProp(item, whDef.matchers) || '0').replace(/[^0-9.-]+/g, '');
-        const val = parseFloat(valStr);
-        return isNaN(val) ? 0 : val;
-    }
 
     function formatNumber(num) {
         return (num || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    // Advanced Cache Detector: Auto-searches all possible localStorage keys
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, character => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        })[character]);
+    }
+
     function loadCachedData() {
-        const POSSIBLE_KEYS = [
-            'inv_scan_products',
-            'physicalStock',
-            'physical_stock',
-            'inv_physical_stock',
-            'physical_stock_data',
-            'inv_products',
-            'products',
-            'stock_data',
-            'cached_stock',
-            'sheet_data'
-        ];
-
-        let foundRaw = null;
-        let foundKey = null;
-
-        for (let key of POSSIBLE_KEYS) {
-            const item = localStorage.getItem(key);
-            if (item && item.trim().length > 2) {
-                foundRaw = item;
-                foundKey = key;
-                break;
-            }
-        }
-
-        // Fallback: search ALL localStorage keys for anything containing 'stock', 'product', or 'sheet'
-        if (!foundRaw) {
-            for (let i = 0; i < localStorage.length; i++) {
-                const k = localStorage.key(i);
-                if (k && (k.toLowerCase().includes('stock') || k.toLowerCase().includes('product') || k.toLowerCase().includes('sheet'))) {
-                    const item = localStorage.getItem(k);
-                    if (item && item.trim().length > 2) {
-                        foundRaw = item;
-                        foundKey = k;
-                        break;
-                    }
-                }
-            }
-        }
-
+        const item = localStorage.getItem('inv_scan_products') || localStorage.getItem('physicalStock');
         const badge = document.getElementById('syncBadge');
-        const debugContainer = document.getElementById('debugKeys');
 
-        if (foundRaw) {
+        if (item) {
             try {
-                let parsed = JSON.parse(foundRaw);
-                
-                // Extract array if wrapped inside an object
-                if (!Array.isArray(parsed) && typeof parsed === 'object') {
-                    if (Array.isArray(parsed.data)) parsed = parsed.data;
-                    else if (Array.isArray(parsed.items)) parsed = parsed.items;
-                    else if (Array.isArray(parsed.physicalStock)) parsed = parsed.physicalStock;
-                    else if (Array.isArray(parsed.products)) parsed = parsed.products;
-                    else {
-                        const arrayProp = Object.values(parsed).find(v => Array.isArray(v));
-                        if (arrayProp) parsed = arrayProp;
-                    }
-                }
-
+                let parsed = JSON.parse(item);
                 if (Array.isArray(parsed) && parsed.length > 0) {
                     rawPhysicalProducts = parsed;
-                    badge.innerText = `${rawPhysicalProducts.length} Items Loaded (${foundKey})`;
-                    badge.className = "text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-1 rounded-full font-mono";
+                    badge.innerText = `${rawPhysicalProducts.length} Batch Records`;
+                    badge.className = "text-[10px] bg-emerald-900 text-emerald-200 border border-emerald-700 px-2.5 py-1 rounded-full font-mono";
                     calculateGlobalStatistics();
-                    if (debugContainer) debugContainer.classList.add('hidden');
                     return;
                 }
             } catch (e) {
-                console.error("Failed to parse cached stock data from key: " + foundKey, e);
+                console.error("Failed to parse cached stock data", e);
             }
         }
 
-        // Diagnostic box if 0 items are loaded
         badge.innerText = "0 Items Loaded";
-        badge.className = "text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-full font-mono";
+        badge.className = "text-[10px] bg-amber-900 text-amber-200 border border-amber-700 px-2.5 py-1 rounded-full font-mono";
+    }
 
-        const existingKeys = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            existingKeys.push(localStorage.key(i));
-        }
+    // --- CONSOLIDATION ENGINE: COMBINES ALL BATCHES FOR AN ITEM CODE ---
+    function consolidateItemRows(rows) {
+        if (!rows || rows.length === 0) return null;
 
-        if (debugContainer) {
-            debugContainer.classList.remove('hidden');
-            debugContainer.innerHTML = `
-                <div class="text-[11px] text-amber-300 bg-amber-950/40 border border-amber-500/30 p-3 rounded-xl space-y-1.5">
-                    <p class="font-bold">⚠️ No cached Physical Stock array found!</p>
-                    <p class="text-slate-300">Existing keys in browser storage (${existingKeys.length}): 
-                        <code class="bg-black/50 px-1.5 py-0.5 rounded text-amber-200 font-mono">${existingKeys.length ? existingKeys.join(', ') : 'NONE'}</code>
-                    </p>
-                    <p class="text-slate-400 text-[10px]">
-                        Please click <strong>Sync</strong> on <code>index.html</code>, or ensure your sync script executes: <br>
-                        <code class="text-indigo-300 font-mono">localStorage.setItem('inv_scan_products', JSON.stringify(physicalStockData));</code>
-                    </p>
-                </div>
-            `;
+        const primary = rows[0];
+        const name = primary['ITEM NAME'] || primary.productName || 'Unnamed Product';
+        const code = primary['ITEM CODE'] || primary.itemCode || 'N/A';
+        const category = primary['CATEGORY'] || primary.category || 'General';
+        const mainGroup = primary['MAIN GROUP'] || primary.mainGroup || '';
+        const supplier = primary['SUPPLIER'] || primary.supplier || 'N/A';
+        const unit = primary['UNIT'] || primary.unit || 'Pcs.';
+
+        let whTotals = { 'CITY CENTER WAREHOUSE': 0, 'Jawalakhel A': 0, 'Jawalakhel B': 0, 'Main Warehouse': 0 };
+        let totalQty = 0;
+        let totalValue = 0;
+        let batchDetails = [];
+
+        rows.forEach(r => {
+            const batchName = r['BATCH'] || r.batch || r['BATCHID'] || r.batchid || 'Default Batch';
+            const rate = parseFloat(r['RATE'] || r.rate || 0) || 0;
+            
+            let rowQty = 0;
+            let rowWhs = {};
+
+            TARGET_WAREHOUSES.forEach(w => {
+                const q = parseFloat(r[w.id] || 0) || 0;
+                rowWhs[w.id] = q;
+                whTotals[w.id] += q;
+                rowQty += q;
+            });
+
+            totalQty += rowQty;
+            totalValue += (rowQty * rate);
+
+            batchDetails.push({
+                batchName: batchName,
+                rate: rate,
+                rowQty: rowQty,
+                rowValue: rowQty * rate,
+                whs: rowWhs
+            });
+        });
+
+        // Calculate weighted average rate or fallback to primary rate
+        const primaryRate = parseFloat(primary['RATE'] || primary.rate || 0) || 0;
+        const avgRate = totalQty > 0 ? (totalValue / totalQty) : primaryRate;
+
+        return {
+            name,
+            code,
+            category,
+            mainGroup,
+            supplier,
+            unit,
+            avgRate,
+            totalQty,
+            totalValue,
+            whTotals,
+            batchDetails,
+            batchCount: rows.length
+        };
+    }
+
+    // --- 1. STRICT ITEM CODE SEARCH (Consolidates all matching batch rows) ---
+    function searchByCodeManual() {
+        document.getElementById('fieldSearchInput').value = '';
+        const query = document.getElementById('codeInput').value;
+        if (!query) return;
+
+        const q = query.trim().toLowerCase();
+
+        // Match ALL rows having this exact ITEM CODE or matching BATCH/BATCHID
+        const matchingRows = rawPhysicalProducts.filter(item => {
+            const itemCode = String(item['ITEM CODE'] || item.itemCode || '').trim().toLowerCase();
+            const batch    = String(item['BATCH'] || item.batch || '').trim().toLowerCase();
+            const batchId  = String(item['BATCHID'] || item.batchid || '').trim().toLowerCase();
+            return itemCode === q || batch === q || batchId === q;
+        });
+
+        hideCandidates();
+
+        if (matchingRows.length > 0) {
+            // Find target item code from first match and gather ALL rows of that Item Code
+            const targetCode = String(matchingRows[0]['ITEM CODE'] || matchingRows[0].itemCode || '').trim().toLowerCase();
+            const allCodeRows = targetCode
+                ? rawPhysicalProducts.filter(item =>
+                    String(item['ITEM CODE'] || item.itemCode || '').trim().toLowerCase() === targetCode
+                )
+                : matchingRows;
+
+            const consolidated = consolidateItemRows(allCodeRows);
+            renderSelectedConsolidatedProduct(consolidated);
+        } else {
+            showNotFound();
         }
     }
 
-    function lookupItem(query) {
+    // --- 2. FIELD / DESCRIPTION SEARCH (Tokenized Order-Independent) ---
+    function searchByFieldsManual() {
+        document.getElementById('codeInput').value = '';
+        const query = document.getElementById('fieldSearchInput').value;
         if (!query) return;
-        const q = query.trim().toLowerCase();
 
-        const matches = rawPhysicalProducts.filter(item => {
-            const code = String(getProp(item, ['item code', 'barcode', 'batch', 'batchid'])).toLowerCase();
-            const name = String(getProp(item, ['item name', 'name', 'product name'])).toLowerCase();
-            return code.includes(q) || name.includes(q);
+        const tokens = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+        if (tokens.length === 0) return;
+
+        // Filter rows matching ALL tokens across description fields
+        const matchingRows = rawPhysicalProducts.filter(item => {
+            const name      = String(item['ITEM NAME'] || item.productName || '').toLowerCase();
+            const supplier  = String(item['SUPPLIER'] || item.supplier || '').toLowerCase();
+            const category  = String(item['CATEGORY'] || item.category || '').toLowerCase();
+            const mainGroup = String(item['MAIN GROUP'] || item.mainGroup || '').toLowerCase();
+
+            const fullTarget = `${name} ${supplier} ${category} ${mainGroup}`;
+            return tokens.every(token => fullTarget.includes(token));
         });
 
+        // Group matched rows by ITEM CODE
+        const groupedMap = new Map();
+        matchingRows.forEach(row => {
+            const code = String(row['ITEM CODE'] || row.itemCode || row['ITEM NAME'] || '').trim();
+            if (!groupedMap.has(code)) {
+                groupedMap.set(code, []);
+            }
+            groupedMap.get(code).push(row);
+        });
+
+        const consolidatedList = [];
+        groupedMap.forEach((rows) => {
+            consolidatedList.push(consolidateItemRows(rows));
+        });
+
+        if (consolidatedList.length === 1) {
+            hideCandidates();
+            renderSelectedConsolidatedProduct(consolidatedList[0]);
+        } else if (consolidatedList.length > 1) {
+            renderCandidateList(consolidatedList);
+            renderSelectedConsolidatedProduct(consolidatedList[0]);
+        } else {
+            hideCandidates();
+            showNotFound();
+        }
+    }
+
+    function renderCandidateList(candidateList) {
+        const candidateCard = document.getElementById('candidateListCard');
+        const candidateCount = document.getElementById('candidateCount');
+        const container = document.getElementById('candidateItemsContainer');
+
+        candidateCount.innerText = `Matching Products (${candidateList.length})`;
+        
+        container.innerHTML = candidateList.map((item, idx) => {
+            return `
+                <div onclick="selectCandidate(${idx})" class="p-2 rounded-lg bg-gray-50 border border-gray-200 hover:border-emerald-500 hover:bg-emerald-50/30 transition-colors cursor-pointer flex justify-between items-center gap-2">
+                    <div class="truncate">
+                        <p class="text-xs font-semibold text-gray-900 truncate">${escapeHtml(item.name)}</p>
+                        <p class="text-[10px] text-gray-500 font-mono">Code: ${escapeHtml(item.code)} • ${item.batchCount} Batch(es)</p>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <span class="text-xs font-bold text-indigo-700 block">${item.totalQty} ${escapeHtml(item.unit)}</span>
+                        <span class="text-[9px] text-gray-500">Rs. ${formatNumber(item.avgRate)}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        window.activeCandidates = candidateList;
+        candidateCard.classList.remove('hidden');
+    }
+
+    function selectCandidate(index) {
+        if (window.activeCandidates && window.activeCandidates[index]) {
+            renderSelectedConsolidatedProduct(window.activeCandidates[index]);
+        }
+    }
+
+    function hideCandidates() {
+        document.getElementById('candidateListCard').classList.add('hidden');
+    }
+
+    function showNotFound() {
+        document.getElementById('resultCard').classList.add('hidden');
+        document.getElementById('notFoundCard').classList.remove('hidden');
+    }
+
+    function renderSelectedConsolidatedProduct(item) {
         const resultCard = document.getElementById('resultCard');
         const notFoundCard = document.getElementById('notFoundCard');
 
-        if (matches.length > 0) {
-            const first = matches[0];
-            const name = getProp(first, ['item name', 'name', 'product name']) || 'Unnamed Product';
-            const code = getProp(first, ['item code', 'barcode', 'batchid', 'batch']) || 'N/A';
-            const supplier = getProp(first, ['supplier']) || 'N/A';
-            const category = getProp(first, ['category']) || 'General';
-            const mainGroup = getProp(first, ['main group']) || '';
-            const unit = getProp(first, ['units', 'unit']) || 'Pcs.';
-            const rate = parseFloat(String(getProp(first, ['rate', 'mrp', 'cost'])).replace(/[^0-9.-]+/g, '')) || 0;
+        document.getElementById('resName').innerText = item.name;
+        document.getElementById('resCode').innerText = item.code;
+        document.getElementById('resSupplier').innerText = item.supplier;
+        document.getElementById('resCategory').innerText = item.category;
+        document.getElementById('resMainGroup').innerText = item.mainGroup;
+        document.getElementById('resBatchCount').innerText = `${item.batchCount} Batch(es)`;
+        document.getElementById('resRate').innerText = `Rs. ${formatNumber(item.avgRate)}`;
+        document.getElementById('res4WhQty').innerText = `${item.totalQty} ${item.unit}`;
+        document.getElementById('res4WhVal').innerText = `Rs. ${formatNumber(item.totalValue)}`;
 
-            let total4WhQty = 0;
-            let whTotals = { main: 0, wh_a: 0, wh_b: 0, city: 0 };
+        // Render Consolidated 4-Warehouse Cards
+        const grid = document.getElementById('warehouseBreakdownGrid');
+        grid.innerHTML = TARGET_WAREHOUSES.map(w => {
+            const qty = item.whTotals[w.id] || 0;
+            const hasStock = qty > 0;
+            return `
+                <div class="p-2.5 rounded-lg border ${hasStock ? 'bg-indigo-50/60 border-indigo-200' : 'bg-gray-50 border-gray-200'}">
+                    <span class="text-[9px] uppercase font-semibold text-gray-500 block truncate">${w.name}</span>
+                    <span class="text-sm font-bold ${hasStock ? 'text-indigo-800' : 'text-gray-400'} block mt-0.5">
+                        ${qty} <span class="text-[10px] font-normal text-gray-500">${escapeHtml(item.unit)}</span>
+                    </span>
+                </div>
+            `;
+        }).join('');
 
-            matches.forEach(m => {
-                TARGET_WAREHOUSES.forEach(w => {
-                    const q = getWhQty(m, w.id);
-                    whTotals[w.id] += q;
-                    total4WhQty += q;
-                });
-            });
+        // Render Individual Batch Breakdown Table
+        const tbody = document.getElementById('batchTableBody');
+        tbody.innerHTML = item.batchDetails.map(b => {
+            return `
+                <tr>
+                    <td class="font-mono font-bold text-gray-900">${escapeHtml(b.batchName)}</td>
+                    <td class="tabular-nums font-semibold text-blue-700">Rs. ${formatNumber(b.rate)}</td>
+                    <td class="tabular-nums ${b.whs['CITY CENTER WAREHOUSE'] > 0 ? 'font-bold text-gray-900' : 'text-gray-400'}">${b.whs['CITY CENTER WAREHOUSE']}</td>
+                    <td class="tabular-nums ${b.whs['Jawalakhel A'] > 0 ? 'font-bold text-gray-900' : 'text-gray-400'}">${b.whs['Jawalakhel A']}</td>
+                    <td class="tabular-nums ${b.whs['Jawalakhel B'] > 0 ? 'font-bold text-gray-900' : 'text-gray-400'}">${b.whs['Jawalakhel B']}</td>
+                    <td class="tabular-nums ${b.whs['Main Warehouse'] > 0 ? 'font-bold text-gray-900' : 'text-gray-400'}">${b.whs['Main Warehouse']}</td>
+                    <td class="tabular-nums font-bold text-indigo-700">${b.rowQty}</td>
+                </tr>
+            `;
+        }).join('');
 
-            document.getElementById('resName').innerText = name;
-            document.getElementById('resCode').innerText = code;
-            document.getElementById('resSupplier').innerText = supplier;
-            document.getElementById('resCategory').innerText = category;
-            document.getElementById('resMainGroup').innerText = mainGroup;
-            document.getElementById('resRate').innerText = formatNumber(rate);
-            document.getElementById('res4WhQty').innerText = `${total4WhQty} ${unit}`;
-            document.getElementById('res4WhVal').innerText = formatNumber(total4WhQty * rate);
-
-            const grid = document.getElementById('warehouseBreakdownGrid');
-            grid.innerHTML = TARGET_WAREHOUSES.map(w => {
-                const qty = whTotals[w.id];
-                const hasStock = qty > 0;
-                return `
-                    <div class="p-2.5 rounded-xl border ${hasStock ? 'bg-indigo-950/40 border-indigo-500/40' : 'bg-slate-950/40 border-slate-800'}">
-                        <span class="text-[9px] uppercase font-semibold text-slate-400 block truncate">${w.name}</span>
-                        <span class="text-sm font-bold ${hasStock ? 'text-indigo-300' : 'text-slate-600'} block mt-0.5">
-                            ${qty} <span class="text-[10px] font-normal text-slate-500">${unit}</span>
-                        </span>
-                    </div>
-                `;
-            }).join('');
-
-            resultCard.classList.remove('hidden');
-            notFoundCard.classList.add('hidden');
-        } else {
-            resultCard.classList.add('hidden');
-            notFoundCard.classList.remove('hidden');
-        }
+        resultCard.classList.remove('hidden');
+        notFoundCard.classList.add('hidden');
     }
 
     function calculateGlobalStatistics() {
-        let totalItems = rawPhysicalProducts.length;
+        // Group raw records by Item Code to compute unique products
+        const uniqueItemCodes = new Set();
         let aggregateQty = 0;
         let aggregateValuation = 0;
-        let whAggregates = { main: 0, wh_a: 0, wh_b: 0, city: 0 };
+        let whAggregates = { 'CITY CENTER WAREHOUSE': 0, 'Jawalakhel A': 0, 'Jawalakhel B': 0, 'Main Warehouse': 0 };
 
         rawPhysicalProducts.forEach(item => {
-            const rate = parseFloat(String(getProp(item, ['rate', 'mrp', 'cost'])).replace(/[^0-9.-]+/g, '')) || 0;
+            const code = String(item['ITEM CODE'] || item.itemCode || item['ITEM NAME'] || '').trim();
+            if (code) uniqueItemCodes.add(code);
+
+            const rate = parseFloat(item['RATE'] || item.rate || 0) || 0;
             let rowQty = 0;
 
             TARGET_WAREHOUSES.forEach(w => {
-                const q = getWhQty(item, w.id);
+                const q = parseFloat(item[w.id] || 0) || 0;
                 whAggregates[w.id] += q;
                 rowQty += q;
             });
@@ -360,49 +589,58 @@
             aggregateValuation += (rowQty * rate);
         });
 
-        document.getElementById('statTotalItems').innerText = totalItems;
+        document.getElementById('statTotalItems').innerText = uniqueItemCodes.size;
         document.getElementById('statTotalQty').innerText = `${aggregateQty} Pcs`;
-        document.getElementById('statTotalValue').innerText = formatNumber(aggregateValuation);
+        document.getElementById('statTotalValue').innerText = `Rs. ${formatNumber(aggregateValuation)}`;
 
         const statGrid = document.getElementById('statWarehouseGrid');
         statGrid.innerHTML = TARGET_WAREHOUSES.map(w => {
             const qty = whAggregates[w.id];
             const pct = aggregateQty > 0 ? ((qty / aggregateQty) * 100).toFixed(1) : 0;
             return `
-                <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="text-[9px] text-slate-400 font-semibold truncate">${w.name}</span>
-                        <span class="text-[8px] px-1.5 py-0.2 bg-slate-800 text-indigo-400 font-mono rounded">${pct}%</span>
+                <div class="bg-gray-50 p-2 rounded-lg border border-gray-200">
+                    <div class="flex justify-between items-center mb-0.5">
+                        <span class="text-[9px] text-gray-500 font-semibold truncate">${w.short}</span>
+                        <span class="text-[8px] px-1 py-0.2 bg-gray-200 text-gray-700 font-mono rounded">${pct}%</span>
                     </div>
-                    <span class="text-sm font-bold text-slate-200 block">${qty} Pcs</span>
+                    <span class="text-xs font-bold text-gray-800 block">${qty} Pcs</span>
                 </div>
             `;
         }).join('');
     }
 
-    function searchManual() {
-        const val = document.getElementById('manualInput').value;
-        lookupItem(val);
-    }
+    // Debounced automatic trigger for Item Code Input
+    let codeDebounce;
+    document.getElementById('codeInput').addEventListener('input', () => {
+        clearTimeout(codeDebounce);
+        codeDebounce = setTimeout(() => searchByCodeManual(), 300);
+    });
 
-    let inputDebounce;
-    document.getElementById('manualInput').addEventListener('input', (e) => {
-        clearTimeout(inputDebounce);
-        inputDebounce = setTimeout(() => lookupItem(e.target.value), 300);
+    // Debounced automatic trigger for Field Search Input
+    let fieldDebounce;
+    document.getElementById('fieldSearchInput').addEventListener('input', () => {
+        clearTimeout(fieldDebounce);
+        fieldDebounce = setTimeout(() => searchByFieldsManual(), 400);
     });
 
     window.addEventListener('load', () => {
         loadCachedData();
 
+        // Initialize Camera Barcode / QR Reader
+        if (typeof Html5Qrcode === 'undefined') {
+            console.warn('Camera scanner library unavailable; manual search remains available.');
+            return;
+        }
+
         const html5QrCode = new Html5Qrcode("reader");
         const qrCodeSuccessCallback = (decodedText) => {
-            document.getElementById('manualInput').value = decodedText;
-            lookupItem(decodedText);
+            document.getElementById('codeInput').value = decodedText;
+            searchByCodeManual();
         };
-        const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+        const config = { fps: 10, qrbox: { width: 240, height: 140 } };
 
         html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback)
-        .catch(err => console.warn("Camera access failed or disabled:", err));
+        .catch(err => console.warn("Camera scanner offline or permission denied:", err));
     });
 </script>
 
