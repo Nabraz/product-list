@@ -8,20 +8,15 @@
   "theme_color": "#2563eb",
   "orientation": "portrait",
   "icons": [
+   
     {
-      "src": "https://png.pngtree.com/png-vector/20260523/ourmid/pngtree-inventory-management-ios-app-icon-on-white-png-image_19389235.webp",
-      "sizes": "512x512",
-      "type": "image/webp",
-      "purpose": "any"
-    },
-    {
-      "src": "icon-192.png",
+      "src": "Pranishicon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "icon-512.png",
+      "src": "Pranishicon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
