@@ -40,7 +40,7 @@ function catalogApp() {
         lastSyncedSecondHand: '',
         lastSyncedPhysicalStock: '',
 
-        activeTab: 'secondhand',    // Default active tab ('secondhand', 'list', 'analytics', 'summary')
+        activeTab: 'summary',    // Default active tab ('secondhand', 'list', 'analytics', 'summary')
         showAllPrices: false,
         showNav: true,
         lastScrollY: 0,
