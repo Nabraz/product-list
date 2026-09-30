@@ -328,9 +328,10 @@
         .doc-receipt .d-signature { margin-top: auto; padding-top: 4px; }
         .doc-receipt .sig-line { margin: 18px 0 4px; }
 
-        .d-header { text-align: center; margin-bottom: 4px; }
-        .d-company { font-size: 18.5px; font-weight: 700; color: #000; }
-        .d-sub { font-size: 12.5px; color: #222; margin-top: 2px; }
+        .d-header { text-align: center; margin-bottom: 4px; padding-bottom: 7px; border-bottom: 1px solid #cbd5e1; }
+        .d-header::after { content: ""; display: block; width: 42px; margin: 7px auto 0; border-bottom: 2px solid #2563eb; }
+        .d-company { font-size: 18.5px; font-weight: 700; color: #111827; }
+        .d-sub { font-size: 12px; color: #475569; margin-top: 2px; }
 
         .d-pan {
             display: flex; align-items: center; justify-content: center; gap: 7px;
@@ -340,17 +341,18 @@
         .pan-digit { width: 19px; height: 19px; border-right: 1px solid #333; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
         .pan-digit:last-child { border-right: none; }
 
-        .d-title { text-align: center; font-size: 16.5px; font-weight: 700; margin: 14px 0 13px; text-decoration: underline; text-underline-offset: 3px; color: #000; }
+        .d-title { text-align: center; font-size: 16px; font-weight: 700; margin: 12px 0; color: #1e3a8a; }
 
         /* Solid Black borders, White background for clean printing */
         .d-meta {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px 30px;
+            gap: 12px 24px;
             margin: 0 0 15px;
-            padding: 16px;
-            border: 2px solid #000 !important;
-            border-radius: 8px;
+            padding: 13px 15px;
+            border: 1px solid #cbd5e1 !important;
+            border-left: 3px solid #2563eb !important;
+            border-radius: 4px;
             background: #fff !important;
         }
         
@@ -359,13 +361,13 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 8px 20px;
-            padding: 12px 18px;
+            padding: 11px 15px;
             margin-bottom: 12px;
         }
         
         .d-info-row { display: flex; font-size: 13.5px; align-items: flex-start; margin-bottom: 2px; }
         .doc-receipt .full-width { grid-column: 1 / -1; }
-        .d-label { width: 110px; font-weight: 600; color: #000; flex-shrink: 0; }
+        .d-label { width: 110px; font-weight: 700; color: #475569; flex-shrink: 0; }
         .d-value { flex: 1; color: #000; white-space: normal; word-break: break-word; }
 
         /* Tables */
@@ -400,8 +402,8 @@
             font-size: 13px; 
         }
         .doc-quotation .d-table thead th { 
-            background: #fff; color: #000; font-weight: 700; text-align: left; 
-            border-bottom: 2px solid #000;
+            background: #eff6ff; color: #1e3a8a; font-weight: 700; text-align: left;
+            border-bottom: 2px solid #64748b;
         }
         .doc-quotation .d-table tbody td { 
             border-top: none; 
@@ -420,7 +422,8 @@
         .emi-greeting { font-size: 13px; margin-bottom: 12px; line-height: 1.6; color: #000; }
         .emi-table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; }
         .emi-table th, .emi-table td { border: 1px solid #000; padding: 10px; font-size: 13.5px; color: #000; }
-        .emi-table th { font-weight: 700; color: #000; text-align: left; background: #fff; }
+        .emi-table th { font-weight: 700; color: #1e3a8a; text-align: left; background: #eff6ff; }
+        .emi-table tbody tr:nth-child(even) td { background: #f8fafc; }
         .emi-table .label-col { font-weight: 600; width: 40%; }
         .emi-table .val-col { width: 60%; }
 
@@ -900,73 +903,77 @@
             }
 
             const tab = document.getElementById(`${type}-tab`);
-            const preview = tab?.querySelector('.preview-wrapper');
             const documentElement = tab?.querySelector('.document');
-            if (!preview || !documentElement) return;
+            if (!documentElement) return;
 
-            const originalStyle = preview.getAttribute('style');
-            const fallbackWindow = window.open('about:blank', '_blank');
-            preview.style.display = 'block';
-            preview.style.position = 'absolute';
-            preview.style.left = '0';
-            preview.style.top = '0';
-            preview.style.width = '210mm';
-            preview.style.zIndex = '-1';
+            const captureHost = document.createElement('div');
+            captureHost.setAttribute('aria-hidden', 'true');
+            Object.assign(captureHost.style, {
+                position: 'fixed',
+                inset: '0 auto auto 0',
+                width: '210mm',
+                height: '297mm',
+                overflow: 'hidden',
+                background: '#fff',
+                zIndex: '10000',
+                pointerEvents: 'none'
+            });
+            const captureDocument = documentElement.cloneNode(true);
+            captureDocument.style.margin = '0';
+            captureDocument.style.boxShadow = 'none';
+            captureHost.appendChild(captureDocument);
+            document.body.appendChild(captureHost);
 
             status.textContent = 'Preparing PDF…';
             status.classList.add('visible');
 
             try {
-                if (document.fonts?.ready) await document.fonts.ready;
-                await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+                if (document.fonts?.ready) {
+                    await Promise.race([
+                        document.fonts.ready,
+                        new Promise(resolve => setTimeout(resolve, 1500))
+                    ]);
+                }
+                await new Promise(resolve => setTimeout(resolve, 100));
                 const voucher = document.getElementById(`${type.charAt(0)}_voucher`)?.value || type;
                 const filename = `${type}-${voucher.replace(/[^a-z0-9_-]+/gi, '-')}.pdf`;
                 const pdf = await html2pdf().set({
                     margin: 0,
                     filename,
                     image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+                    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0 },
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
                     pagebreak: { mode: [] }
-                }).from(documentElement).toPdf().get('pdf');
+                }).from(captureDocument).toPdf().get('pdf');
                 while (pdf.getNumberOfPages() > 1) pdf.deletePage(pdf.getNumberOfPages());
                 const blob = pdf.output('blob');
                 const file = new File([blob], filename, { type: 'application/pdf' });
-                const url = URL.createObjectURL(blob);
 
                 if (navigator.share && navigator.canShare({ files: [file] })) {
                     try {
                         await navigator.share({ files: [file], title: filename });
-                        if (fallbackWindow) fallbackWindow.close();
                         status.textContent = 'PDF ready. Choose Print or Save to Files from the share sheet.';
-                        setTimeout(() => URL.revokeObjectURL(url), 60000);
                         return;
                     } catch (shareError) {
                         if (shareError.name === 'AbortError') {
-                            if (fallbackWindow) fallbackWindow.close();
                             status.textContent = 'PDF sharing was cancelled.';
                             return;
                         }
                     }
                 }
 
-                if (fallbackWindow) fallbackWindow.location.href = url;
-                else {
-                    const download = document.createElement('a');
-                    download.href = url;
-                    download.download = filename;
-                    download.click();
-                }
-                status.textContent = 'PDF opened. Use Safari’s Share button to print or save it.';
-                setTimeout(() => URL.revokeObjectURL(url), 60000);
+                const url = URL.createObjectURL(blob);
+                const download = document.createElement('a');
+                download.href = url;
+                download.download = filename;
+                download.click();
+                status.textContent = 'PDF downloaded. Open it from Safari downloads to print or share.';
+                setTimeout(() => URL.revokeObjectURL(url), 300000);
             } catch (error) {
-                if (fallbackWindow) fallbackWindow.close();
                 console.error('PDF export failed:', error);
-                status.textContent = 'PDF export failed. Opening Safari’s native print options instead.';
-                window.print();
+                status.textContent = 'PDF export failed. Use Safari’s Share menu, then Print.';
             } finally {
-                if (originalStyle === null) preview.removeAttribute('style');
-                else preview.setAttribute('style', originalStyle);
+                captureHost.remove();
             }
         }
 
