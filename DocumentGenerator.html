@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pranish Apple Store - Document Generator</title>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.3/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/nepali-date-converter@3.4.0/dist/nepali-date-converter.umd.js"></script>
 
     <style>
@@ -13,8 +14,8 @@
         :root {
             --primary: #2563eb;
             --primary-hover: #1d4ed8;
-            --bg-color: #e5e7eb;
-            --text-main: #111;
+            --bg-color: #f0f2f5;
+            --text-main: #1f2937;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -24,45 +25,64 @@
             background: var(--bg-color);
             color: var(--text-main);
             line-height: 1.5;
-            padding: 20px;
+            padding: 0 0 24px;
         }
+
+        .app-header {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            max-width: 760px;
+            min-height: 58px;
+            margin: 0 auto;
+            padding: 8px 14px;
+            background: #fff;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .app-header h1 { font-size: 15px; line-height: 1.2; color: #111827; }
+        .app-header p { margin-top: 2px; color: #9ca3af; font-size: 10px; }
 
         /* ========== TAB NAVIGATION ========== */
         .tabs-container {
-            max-width: 1400px;
-            margin: 0 auto 20px auto;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 10px;
-            background: white;
-            padding: 10px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 58px;
+            z-index: 19;
+            max-width: 760px;
+            margin: 0 auto 12px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 4px;
+            padding: 8px 10px;
+            background: #fff;
+            border-bottom: 1px solid #e5e7eb;
         }
 
         .home-link {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            min-height: 42px;
-            padding: 10px 14px;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            background: #fff;
-            color: #374151;
-            font-size: 14px;
+            min-height: 44px;
+            padding: 10px 12px;
+            border: 0;
+            border-radius: 6px;
+            background: #f3f4f6;
+            color: #4b5563;
+            font-size: 12px;
             font-weight: 600;
             text-decoration: none;
         }
-        .home-link:hover { background: #f3f4f6; }
+        .home-link:hover { background: #e5e7eb; }
 
         .tab-btn {
-            padding: 12px 24px;
+            min-height: 44px;
+            padding: 10px 8px;
             border: none;
             background: #f3f4f6;
             color: #4b5563;
-            border-radius: 8px;
+            border-radius: 6px;
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
@@ -81,24 +101,23 @@
 
         /* ========== LAYOUT ========== */
         .app-grid {
-            max-width: 1400px;
+            max-width: 760px;
             margin: 0 auto;
-            display: grid;
-            grid-template-columns: 320px 1fr;
-            gap: 20px;
-            align-items: start;
+            display: block;
+            padding: 0 10px;
         }
 
         /* ========== PANELS ========== */
         .controls {
             background: white;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
         }
 
         .controls h2 {
-            font-size: 17px;
+            font-size: 15px;
             margin-bottom: 16px;
             color: #111;
             border-bottom: 2px solid #e5e7eb;
@@ -115,10 +134,13 @@
         }
         .form-group input, .form-group textarea {
             width: 100%;
-            padding: 9px 11px;
-            border: 1px solid #ccc;
+            min-height: 44px;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
             border-radius: 6px;
-            font-size: 13px;
+            background: #f9fafb;
+            color: #111827;
+            font-size: 16px;
             font-family: inherit;
         }
         .form-group input:focus, .form-group textarea:focus {
@@ -129,13 +151,21 @@
 
         .btn-group {
             display: flex;
-            flex-direction: column;
-            gap: 9px;
-            margin-top: 18px;
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 16px -16px -16px;
+            padding: 12px 16px;
+            border-top: 1px solid #e5e7eb;
+            background: #fff;
+            position: sticky;
+            bottom: 0;
+            z-index: 5;
         }
 
         button {
-            padding: 11px;
+            min-height: 44px;
+            padding: 10px 12px;
             border: none;
             border-radius: 6px;
             font-size: 13.5px;
@@ -157,6 +187,27 @@
         .btn-warning:hover { background: #d97706; }
         .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
         .btn-outline:hover { background: #eff6ff; }
+        .btn-group button { flex: 1 1 130px; }
+        .controls > .btn-outline { min-height: 44px; }
+        .preview-wrapper { display: none; }
+        .print-status {
+            display: none;
+            margin: 12px 0 0;
+            padding: 10px 12px;
+            border: 1px solid #bfdbfe;
+            border-radius: 6px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            font-size: 12px;
+        }
+        .print-status.visible { display: block; }
+
+        @media (min-width: 760px) {
+            .app-header, .tabs-container { max-width: 1120px; }
+            .app-grid { max-width: 1120px; padding: 0 18px; }
+            .controls { padding: 22px; }
+            .btn-group { margin: 18px -22px -22px; padding: 14px 22px; }
+        }
 
         /* ========== MODAL DB LIST ========== */
         .modal-overlay {
@@ -384,37 +435,49 @@
         @media print {
             html, body { 
                 background: #fff !important; 
-                height: 100% !important; 
+                height: auto !important; 
                 margin: 0 !important; 
                 padding: 0 !important;
-                overflow: hidden !important; 
+                overflow: visible !important;
             }
             body * { visibility: hidden; }
-            .active .document, .active .document * { visibility: visible; }
+            .app-header, .tabs-container, .controls, .preview-header, .modal-overlay, .print-status { display: none !important; }
+            .tab-content { display: none !important; }
+            .tab-content.active { display: block !important; }
+            .tab-content.active .app-grid { display: block !important; max-width: none !important; padding: 0 !important; }
+            .tab-content.active .preview-wrapper { display: block !important; margin: 0 !important; padding: 0 !important; border: 0 !important; box-shadow: none !important; }
+            .tab-content.active .document, .tab-content.active .document * { visibility: visible; }
             .document {
-                position: absolute; left: 0; top: 0; width: 210mm;
+                position: relative; left: auto; top: auto; width: 210mm;
                 margin: 0 !important; padding: 0 !important; box-shadow: none;
                 height: 297mm !important;
                 page-break-after: avoid !important;
                 page-break-before: avoid !important;
             }
             .doc-quotation, .doc-emi { padding: 12mm 15mm !important; }
-            .active .document, .active .document * {
+            .tab-content.active .document, .tab-content.active .document * {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
+            .doc-receipt, .doc-quotation, .doc-emi { break-inside: avoid !important; page-break-inside: avoid !important; }
             @page { size: A4; margin: 0; }
         }
     </style>
 </head>
 <body>
 
-    <div class="tabs-container">
-        <a class="home-link" href="index.html"><span aria-hidden="true">⌂</span> Home</a>
+    <header class="app-header">
+        <a class="home-link" href="index.html" aria-label="Home"><span aria-hidden="true">⌂</span><span>Home</span></a>
+        <div><h1>Document Generator</h1><p>Receipts and quotations</p></div>
+    </header>
+
+    <nav class="tabs-container" aria-label="Document type">
         <button class="tab-btn active" onclick="switchTab('receipt', this)">Receipt Generator</button>
         <button class="tab-btn" onclick="switchTab('quotation', this)">Quotation Generator</button>
         <button class="tab-btn" onclick="switchTab('emi', this)">Samsung EMI Quotation</button>
-    </div>
+    </nav>
+
+    <p id="printStatus" class="print-status" role="status" aria-live="polite"></p>
 
     <!-- DB MODAL -->
     <div class="modal-overlay" id="dbModal">
@@ -451,14 +514,14 @@
 
                 <div class="btn-group" id="r_create_btns">
                     <button class="btn-success" onclick="saveDocument('receipt')">Save Receipt</button>
-                    <button class="btn-dark" onclick="window.print()">Print / PDF</button>
+                    <button class="btn-dark" onclick="printDocument('receipt')">Print / PDF</button>
                     <button class="btn-secondary" onclick="newDocument('receipt')">+ Clear & Start New</button>
                 </div>
 
                 <div class="btn-group" id="r_edit_btns" style="display:none;">
                     <button class="btn-primary" onclick="saveDocument('receipt')">Update Existing Receipt</button>
                     <button class="btn-warning" onclick="saveAsNew('receipt')">Save as New</button>
-                    <button class="btn-dark" onclick="window.print()">Print / PDF</button>
+                    <button class="btn-dark" onclick="printDocument('receipt')">Print / PDF</button>
                     <button class="btn-secondary" onclick="newDocument('receipt')">+ Clear & Start New</button>
                 </div>
             </div>
@@ -587,14 +650,14 @@
 
                 <div class="btn-group" id="q_create_btns">
                     <button class="btn-success" onclick="saveDocument('quotation')">Save Quotation</button>
-                    <button class="btn-dark" onclick="window.print()">Print / PDF</button>
+                    <button class="btn-dark" onclick="printDocument('quotation')">Print / PDF</button>
                     <button class="btn-secondary" onclick="newDocument('quotation')">+ Clear & Start New</button>
                 </div>
 
                 <div class="btn-group" id="q_edit_btns" style="display:none;">
                     <button class="btn-primary" onclick="saveDocument('quotation')">Update Quotation</button>
                     <button class="btn-warning" onclick="saveAsNew('quotation')">Save as New</button>
-                    <button class="btn-dark" onclick="window.print()">Print / PDF</button>
+                    <button class="btn-dark" onclick="printDocument('quotation')">Print / PDF</button>
                     <button class="btn-secondary" onclick="newDocument('quotation')">+ Clear & Start New</button>
                 </div>
             </div>
@@ -690,14 +753,14 @@
 
                 <div class="btn-group" id="e_create_btns">
                     <button class="btn-success" onclick="saveDocument('emi')">Save EMI Quotation</button>
-                    <button class="btn-dark" onclick="window.print()">Print / PDF</button>
+                    <button class="btn-dark" onclick="printDocument('emi')">Print / PDF</button>
                     <button class="btn-secondary" onclick="newDocument('emi')">+ Clear & Start New</button>
                 </div>
 
                 <div class="btn-group" id="e_edit_btns" style="display:none;">
                     <button class="btn-primary" onclick="saveDocument('emi')">Update EMI Quotation</button>
                     <button class="btn-warning" onclick="saveAsNew('emi')">Save as New</button>
-                    <button class="btn-dark" onclick="window.print()">Print / PDF</button>
+                    <button class="btn-dark" onclick="printDocument('emi')">Print / PDF</button>
                     <button class="btn-secondary" onclick="newDocument('emi')">+ Clear & Start New</button>
                 </div>
             </div>
@@ -782,6 +845,88 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(tabId + '-tab').classList.add('active');
             if(btn) btn.classList.add('active');
+        }
+
+        async function printDocument(type) {
+            const status = document.getElementById('printStatus');
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+            if (!isIOS || typeof html2pdf !== 'function') {
+                window.print();
+                if (isIOS && typeof html2pdf !== 'function') {
+                    status.textContent = 'PDF export is unavailable. Safari will open its native print options.';
+                    status.classList.add('visible');
+                }
+                return;
+            }
+
+            const tab = document.getElementById(`${type}-tab`);
+            const preview = tab?.querySelector('.preview-wrapper');
+            const documentElement = tab?.querySelector('.document');
+            if (!preview || !documentElement) return;
+
+            const originalStyle = preview.getAttribute('style');
+            const fallbackWindow = window.open('about:blank', '_blank');
+            preview.style.display = 'block';
+            preview.style.position = 'fixed';
+            preview.style.left = '-10000px';
+            preview.style.top = '0';
+            preview.style.width = '210mm';
+            preview.style.zIndex = '-1';
+
+            status.textContent = 'Preparing PDF…';
+            status.classList.add('visible');
+
+            try {
+                const voucher = document.getElementById(`${type.charAt(0)}_voucher`)?.value || type;
+                const filename = `${type}-${voucher.replace(/[^a-z0-9_-]+/gi, '-')}.pdf`;
+                const pdf = await html2pdf().set({
+                    margin: 0,
+                    filename,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak: { mode: ['css', 'legacy'] }
+                }).from(documentElement).toPdf().get('pdf');
+                const blob = pdf.output('blob');
+                const file = new File([blob], filename, { type: 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+
+                if (navigator.share && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({ files: [file], title: filename });
+                        if (fallbackWindow) fallbackWindow.close();
+                        status.textContent = 'PDF ready. Choose Print or Save to Files from the share sheet.';
+                        setTimeout(() => URL.revokeObjectURL(url), 60000);
+                        return;
+                    } catch (shareError) {
+                        if (shareError.name === 'AbortError') {
+                            if (fallbackWindow) fallbackWindow.close();
+                            status.textContent = 'PDF sharing was cancelled.';
+                            return;
+                        }
+                    }
+                }
+
+                if (fallbackWindow) fallbackWindow.location.href = url;
+                else {
+                    const download = document.createElement('a');
+                    download.href = url;
+                    download.download = filename;
+                    download.click();
+                }
+                status.textContent = 'PDF opened. Use Safari’s Share button to print or save it.';
+                setTimeout(() => URL.revokeObjectURL(url), 60000);
+            } catch (error) {
+                if (fallbackWindow) fallbackWindow.close();
+                console.error('PDF export failed:', error);
+                status.textContent = 'PDF export failed. Opening Safari’s native print options instead.';
+                window.print();
+            } finally {
+                if (originalStyle === null) preview.removeAttribute('style');
+                else preview.setAttribute('style', originalStyle);
+            }
         }
 
         function cacheStaffName(name) {
