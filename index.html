@@ -11,68 +11,35 @@
     <link rel="apple-touch-icon" href="https://png.pngtree.com/png-vector/20260523/ourmid/pngtree-inventory-management-ios-app-icon-on-white-png-image_19389235.webp">
     <link rel="icon" href="https://png.pngtree.com/png-vector/20260523/ourmid/pngtree-inventory-management-ios-app-icon-on-white-png-image_19389235.webp">
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background: #f0f2f5; }
-        .app-shell { width: 100%; max-width: 540px; margin: 0 auto; display: flex; flex-direction: column; min-height: 100vh; position: relative; }
-        main { padding-bottom: calc(84px + max(env(safe-area-inset-bottom), 20px)); }
-
-        .dense-table { font-size: 11px; border-collapse: collapse; width: 100%; }
-        .dense-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; padding: 5px 6px; background: #374151; color: #fff; font-weight: 700; text-align: left; }
-        .dense-table td { padding: 5px 6px; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
-        .dense-table tr:hover td { background: #f9fafb; }
-
-        .sh-table { font-size: 11px; border-collapse: collapse; width: 100%; }
-        .sh-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; padding: 5px 6px; background: #374151; color: #fff; font-weight: 700; text-align: left; }
-        .sh-table td { padding: 5px 6px; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
-        .sh-table tr:hover td { background: #f9fafb; }
-        .sh-device-name { font-weight: 700; font-size: 12px; color: #000000; line-height: 1.3; }
-        .brand-cell .brand-name { color: #1d4ed8; font-weight: 700; font-size: 11px; display: block; line-height: 1.2; }
-        .brand-cell .type-badge { color: #6b7280; font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-top: 1px; }
-        .mrp-cell { font-size: 11px; color: #1d4ed8; font-weight: 700; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
-        .cost-cell { font-size: 11px; color: #dc2626; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-        .product-name { font-size: 11px; color: #111827; font-weight: 500; line-height: 1.3; }
-        .dots-cost { color: #dc2626; letter-spacing: 2px; font-size: 9px; }
-
-        @media (min-width: 1024px) {
-            body { padding: 24px; }
-            .app-shell { max-width: 1280px; }
-            header { border-radius: 20px 20px 0 0; overflow: hidden; }
-            main { padding-bottom: calc(112px + max(env(safe-area-inset-bottom), 20px)); }
-            .summary-grid { display: grid !important; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; padding: 16px; }
-            .toolbar { flex-wrap: wrap; gap: 10px; padding: 14px 16px; }
-            .toolbar input, .toolbar select { min-height: 42px; font-size: 13px !important; }
-            .toolbar select { max-width: none !important; }
-            .toolbar button { min-height: 42px; font-size: 12px !important; }
-            .analytics-layout, .summary-layout { padding: 20px; }
-            .analytics-layout > .grid.grid-cols-2 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-            .dense-table { font-size: 12px; }
-            .dense-table th { font-size: 10px; padding: 7px 8px; }
-            .dense-table td { padding: 7px 8px; }
-            .sh-table { font-size: 12px; }
-            .sh-device-name { font-size: 13px; }
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="text-gray-800" x-data="catalogApp()" x-init="init()">
+<body class="text-gray-800" x-data="catalogApp()" x-init="init()" @scroll.window="handleScroll()">
 
 <div class="app-shell">
 
-    <!-- Header -->
+    <!-- App Header -->
     <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
         <div class="flex items-center justify-between px-3 py-2">
             <div class="flex items-center gap-2">
-                <span class="text-lg" x-text="activeTab === 'secondhand' ? '📱' : activeTab === 'list' ? '🎧' : activeTab === 'analytics' ? '📊' : '🧾'"></span>
+            <span class="text-lg" x-text="activeTab === 'secondhand' ? '📱' : activeTab === 'list' ? '🎧' : activeTab === 'analytics' ? '📊' : '🧾'"></span>
                 <div>
-                    <h1 class="text-sm font-bold text-gray-900 leading-tight" x-text="activeTab === 'secondhand' ? 'Second Hand Stock' : activeTab === 'list' ? 'Accessories Stock' : activeTab === 'analytics' ? 'Metrics' : 'Summary'"></h1>
+                <h1 class="text-sm font-bold text-gray-900 leading-tight" x-text="activeTab === 'secondhand' ? 'Second Hand DB' : activeTab === 'list' ? 'Accessories DB' : activeTab === 'analytics' ? 'Metrics' : 'Summary'"></h1>
                     <p class="text-[9px] text-gray-400" x-text="lastSynced ? 'Synced: ' + lastSynced : 'Not synced'"></p>
                 </div>
             </div>
             <div class="flex items-center gap-1.5">
-                <a href="productscan.html" class="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-100 text-emerald-700 text-[10px] font-semibold hover:bg-emerald-200">
+                <a href="DocumentGenerator.html" class="flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-100 text-indigo-700 text-[10px] font-semibold">
+                    <span>📝</span>
+                    <span>Docs</span>
+                </a>
+
+                <a href="productscan.html" class="flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-100 text-indigo-700 text-[10px] font-semibold">
                     <span>📷</span>
                     <span>Scan</span>
                 </a>
+
                 <button @click="toggleAllPrices()" class="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-100 text-gray-600 text-[10px] font-semibold">
                     <span x-text="showAllPrices ? '🙈' : '👁️'"></span>
                     <span x-text="showAllPrices ? 'Hide' : 'Prices'"></span>
@@ -80,24 +47,18 @@
                 <button @click="fetchData()" class="flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-600 text-white text-[10px] font-semibold">
                     <span x-show="loading" class="animate-spin inline-block">⟳</span>
                     <span x-show="!loading">⭳</span>
-                    <span x-text="loading ? 'Syncing...' : 'Sync'"></span>
+                    <span x-text="loading ? 'Loading...' : 'Sync'"></span>
                 </button>
             </div>
         </div>
-
-        <!-- Navigation Tabs -->
-        <nav class="flex border-t border-gray-100 bg-gray-50 text-[11px] font-semibold">
-            <button @click="switchTab('list')" :class="activeTab === 'list' ? 'bg-white text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'" class="flex-1 py-2 text-center">Accessories</button>
-            <button @click="switchTab('secondhand')" :class="activeTab === 'secondhand' ? 'bg-white text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'" class="flex-1 py-2 text-center">Second Hand</button>
-            <button @click="switchTab('analytics')" :class="activeTab === 'analytics' ? 'bg-white text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'" class="flex-1 py-2 text-center">Metrics</button>
-            <button @click="switchTab('summary')" :class="activeTab === 'summary' ? 'bg-white text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'" class="flex-1 py-2 text-center">Summary</button>
-        </nav>
     </header>
 
     <main class="flex-1">
         
-        <!-- TAB 1: ACCESSORIES (Sheet1) -->
+        <!-- ================= TAB 1: STOCK (PRODUCT LIST) ================= -->
         <div x-show="activeTab === 'list'">
+
+            <!-- Summary chips -->
             <div class="summary-grid flex gap-2 px-3 py-2 bg-white border-b border-gray-100">
                 <div class="flex-1 text-center py-1 rounded-lg bg-blue-50">
                     <p class="text-[9px] text-gray-400 font-semibold uppercase">Products</p>
@@ -117,8 +78,9 @@
                 </div>
             </div>
 
+            <!-- Search & Filter bar -->
             <div class="toolbar flex gap-1.5 px-2 py-1.5 bg-white border-b border-gray-100">
-                <input type="text" x-model="searchQuery" placeholder="🔍 Search name, brand, barcode…" class="flex-1 min-w-0 px-2 py-1.5 text-[11px] border border-gray-200 rounded-lg bg-gray-50 outline-none focus:border-blue-400">
+                <input type="text" x-model="searchQuery" placeholder="🔍 Search name, brand, type…" class="flex-1 min-w-0 px-2 py-1.5 text-[11px] border border-gray-200 rounded-lg bg-gray-50 outline-none focus:border-blue-400">
                 <select x-model="filterBrand" class="px-1.5 py-1.5 text-[10px] border border-gray-200 rounded-lg bg-gray-50 max-w-[90px]">
                     <option value="">All Brands</option>
                     <template x-for="brand in uniqueBrands">
@@ -134,6 +96,17 @@
                 <button x-show="searchQuery || filterBrand || filterType" @click="clearAllFilters()" class="px-2 py-1 text-[10px] bg-gray-200 rounded-lg font-semibold text-gray-600">✕</button>
             </div>
 
+            <!-- Active filter chips -->
+            <div x-show="filterBrand || filterType" class="flex gap-1.5 px-2 py-1 bg-white border-b border-gray-100 flex-wrap">
+                <template x-if="filterBrand">
+                    <button @click="filterBrand=''" class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold">Brand: <span x-text="filterBrand"></span> ✕</button>
+                </template>
+                <template x-if="filterType">
+                    <button @click="filterType=''" class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-semibold">Type: <span x-text="filterType"></span> ✕</button>
+                </template>
+            </div>
+
+            <!-- Dense Data Table -->
             <div class="bg-white overflow-x-auto">
                 <table class="dense-table">
                     <colgroup>
@@ -153,17 +126,14 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <template x-for="(product, index) in filteredProducts" :key="product.id || index">
+                        <template x-for="(product, index) in filteredProducts" :key="product.id">
                             <tr>
                                 <td class="text-gray-400 font-mono text-[10px] text-center" x-text="index + 1"></td>
                                 <td class="brand-cell">
-                                    <button @click="setBrandFilter(product.brand)" class="brand-name hover:underline text-left w-full" x-text="product.brand || 'General'"></button>
-                                    <button @click="setTypeFilter(product.type)" class="type-badge hover:text-blue-500 text-left w-full" x-text="product.type || 'Item'"></button>
+                                    <button @click="setBrandFilter(product.brand)" class="brand-name hover:underline text-left w-full" x-text="product.brand"></button>
+                                    <button @click="setTypeFilter(product.type)" class="type-badge hover:text-blue-500 text-left w-full" x-text="product.type"></button>
                                 </td>
-                                <td class="product-name">
-                                    <div x-text="product.name"></div>
-                                    <span x-show="product.barcode" class="text-[9px] text-gray-400 font-mono" x-text="'BC: ' + product.barcode"></span>
-                                </td>
+                                <td class="product-name" x-text="product.name"></td>
                                 <td class="mrp-cell" x-text="cleanCurrencyText(product.mrp)"></td>
                                 <td class="cost-cell">
                                     <span x-show="showAllPrices" x-text="cleanCurrencyText(product.cost)"></span>
@@ -179,336 +149,424 @@
             </div>
         </div>
 
-        <!-- TAB 2: SECOND HAND (Sheet2) -->
-        <div x-show="activeTab === 'secondhand'">
-            <div class="summary-grid flex gap-2 px-3 py-2 bg-white border-b border-gray-100">
-                <div class="flex-1 text-center py-1 rounded-lg bg-blue-50">
-                    <p class="text-[9px] text-gray-400 font-semibold uppercase">Second Hand Count</p>
-                    <p class="text-sm font-bold text-blue-700" x-text="secondHandProducts.length"></p>
-                </div>
-            </div>
-
-            <div class="bg-white overflow-x-auto">
-                <table class="sh-table">
-                    <colgroup>
-                        <col style="width:28px">
-                        <col style="width:90px">
-                        <col>
-                        <col style="width:72px">
-                        <col style="width:52px">
-                    </colgroup>
-                    <thead>
-                        <tr>
-                            <th class="text-center">#</th>
-                            <th>BRAND / TYPE</th>
-                            <th>DEVICE NAME</th>
-                            <th class="text-right">PRICE</th>
-                            <th class="text-right">COST</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <template x-for="(item, index) in secondHandProducts" :key="item.id || index">
-                            <tr>
-                                <td class="text-gray-400 font-mono text-[10px] text-center" x-text="index + 1"></td>
-                                <td class="brand-cell">
-                                    <span class="brand-name" x-text="item.brand || 'Used'"></span>
-                                    <span class="type-badge" x-text="item.type || 'Phone'"></span>
-                                </td>
-                                <td class="product-name">
-                                    <div class="sh-device-name" x-text="item.name"></div>
-                                    <span x-show="item.barcode" class="text-[9px] text-gray-400 font-mono" x-text="'IMEI/BC: ' + item.barcode"></span>
-                                </td>
-                                <td class="mrp-cell" x-text="cleanCurrencyText(item.mrp)"></td>
-                                <td class="cost-cell">
-                                    <span x-show="showAllPrices" x-text="cleanCurrencyText(item.cost)"></span>
-                                    <span x-show="!showAllPrices" class="dots-cost">•••</span>
-                                </td>
-                            </tr>
-                        </template>
-                        <tr x-show="secondHandProducts.length === 0">
-                            <td colspan="5" class="text-center py-10 text-gray-400 font-semibold text-xs">No items found in tab "Sheet2".</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- TAB 3: ANALYTICS -->
+        <!-- ================= TAB 2: ANALYTICS ================= -->
         <div x-show="activeTab === 'analytics'" class="analytics-layout p-3 space-y-3">
-            <div class="grid grid-cols-2 gap-2">
+
+            <div class="grid grid-cols-2 lg:grid-cols-5 gap-2">
                 <div class="bg-white p-3 rounded-xl shadow-sm border-l-4 border-blue-500">
-                    <p class="text-[9px] text-gray-400 font-semibold uppercase">Total Retail Value</p>
-                    <p class="text-sm font-bold text-blue-700" x-text="formatCurrency(totalMrpValue)"></p>
+                    <p class="text-[9px] text-gray-400 font-semibold uppercase">Unique Items</p>
+                    <p class="text-sm font-bold text-blue-700" x-text="physicalStockReport.totals.productCount.toLocaleString()"></p>
+                </div>
+                <div class="bg-white p-3 rounded-xl shadow-sm border-l-4 border-emerald-500">
+                    <p class="text-[9px] text-gray-400 font-semibold uppercase">Net On Hand</p>
+                    <p class="text-sm font-bold text-emerald-700" x-text="physicalStockReport.totals.totalQuantity.toLocaleString()"></p>
+                </div>
+                <div class="bg-white p-3 rounded-xl shadow-sm border-l-4 border-orange-500">
+                    <p class="text-[9px] text-gray-400 font-semibold uppercase">Stock Value</p>
+                    <p class="text-sm font-bold text-orange-700" x-text="formatStockValue(physicalStockReport.totals.totalValue)"></p>
+                </div>
+                <div class="bg-white p-3 rounded-xl shadow-sm border-l-4 border-cyan-600">
+                    <p class="text-[9px] text-gray-400 font-semibold uppercase">Batch Records</p>
+                    <p class="text-sm font-bold text-cyan-700" x-text="physicalStockReport.totals.batchCount.toLocaleString()"></p>
                 </div>
                 <div class="bg-white p-3 rounded-xl shadow-sm border-l-4 border-red-500">
-                    <p class="text-[9px] text-gray-400 font-semibold uppercase">Total Cost Value</p>
-                    <p class="text-sm font-bold text-red-600" x-text="formatCurrency(totalCostValue)"></p>
-                </div>
-                <div class="bg-white p-3 rounded-xl shadow-sm border-l-4 border-green-500">
-                    <p class="text-[9px] text-gray-400 font-semibold uppercase">Potential Profit</p>
-                    <p class="text-sm font-bold text-green-600" x-text="formatCurrency(totalProfit)"></p>
-                </div>
-                <div class="bg-white p-3 rounded-xl shadow-sm border-l-4 border-purple-500">
-                    <p class="text-[9px] text-gray-400 font-semibold uppercase">Avg Margin</p>
-                    <p class="text-sm font-bold text-purple-700" x-text="avgMarginPercent.toFixed(1) + '%'"></p>
+                    <p class="text-[9px] text-gray-400 font-semibold uppercase">Negative Batches</p>
+                    <p class="text-sm font-bold text-red-600" x-text="physicalStockReport.totals.negativeBatchCount.toLocaleString()"></p>
                 </div>
             </div>
+
+            <!-- Charts -->
+            <div class="analytics-charts space-y-3">
+                <div class="bg-white p-3 rounded-xl shadow-sm">
+                    <h3 class="font-bold text-gray-700 mb-2 text-xs">Net Quantity by Branch / Warehouse</h3>
+                    <canvas id="brandChart"></canvas>
+                </div>
+                <div class="bg-white p-3 rounded-xl shadow-sm">
+                    <h3 class="font-bold text-gray-700 mb-2 text-xs">Net Quantity by Category · Top 8 + Other</h3>
+                    <canvas id="typeChart"></canvas>
+                </div>
+                <div class="bg-white p-3 rounded-xl shadow-sm">
+                    <h3 class="font-bold text-gray-700 mb-2 text-xs">Net Quantity by Main Group · Top 8 + Other</h3>
+                    <canvas id="priceRangeChart"></canvas>
+                </div>
+                <div class="bg-white p-3 rounded-xl shadow-sm">
+                    <h3 class="font-bold text-gray-700 mb-2 text-xs">Stock Value by Branch / Warehouse</h3>
+                    <canvas id="valueByBrandChart"></canvas>
+                </div>
+            </div>
+            <p x-show="physicalStockReport.totals.batchCount === 0" class="bg-white p-5 text-center text-gray-500 text-sm rounded-lg">No physical stock data is cached. Sync the inventory or open the stock scanner to load it.</p>
         </div>
 
-        <!-- TAB 4: SUMMARY -->
+        <!-- ================= TAB 3: SECOND HAND PHONES ================= -->
+        <div x-show="activeTab === 'secondhand'" class="space-y-0">
+
+            <!-- Summary chips -->
+            <div class="summary-grid flex gap-2 px-3 py-2 bg-white border-b border-gray-100">
+                <div class="flex-1 text-center py-1 rounded-lg bg-indigo-50">
+                    <p class="text-[9px] text-gray-400 font-semibold uppercase">Devices</p>
+                    <p class="text-sm font-bold text-indigo-700" x-text="secondHandProducts.length"></p>
+                </div>
+                <div class="flex-1 text-center py-1 rounded-lg bg-orange-50">
+                    <p class="text-[9px] text-gray-400 font-semibold uppercase">Total Cost</p>
+                    <p class="text-sm font-bold text-orange-600" x-text="formatCurrency(secondHandProducts.reduce((s, p) => s + parseFloat(p.costPrice || 0), 0))"></p>
+                </div>
+                <div class="flex-1 text-center py-1 rounded-lg bg-green-50">
+                    <p class="text-[9px] text-gray-400 font-semibold uppercase">Exp. Sales</p>
+                    <p class="text-sm font-bold text-green-600" x-text="formatCurrency(secondHandProducts.reduce((s, p) => s + parseFloat(p.expectedSalesPrice || 0), 0))"></p>
+                </div>
+            </div>
+
+            <!-- Search & Group-by bar -->
+            <div class="toolbar flex gap-1.5 px-2 py-1.5 bg-white border-b border-gray-100">
+                <input type="text" x-model="shSearchQuery" placeholder="🔍 Search name, type, color…" class="flex-1 min-w-0 px-2 py-1.5 text-[11px] border border-gray-200 rounded-lg bg-gray-50 outline-none focus:border-blue-400">
+                <div class="flex rounded-lg overflow-hidden border border-gray-200 shrink-0">
+                    <button @click="shGroupBy = 'branch'" :class="shGroupBy === 'branch' ? 'bg-gray-700 text-white' : 'bg-gray-50 text-gray-600'" class="px-2 py-1 text-[10px] font-semibold transition-colors">Branch</button>
+                    <button @click="shGroupBy = 'type'" :class="shGroupBy === 'type' ? 'bg-gray-700 text-white' : 'bg-gray-50 text-gray-600'" class="px-2 py-1 text-[10px] font-semibold transition-colors border-l border-gray-200">Type</button>
+                </div>
+                <button x-show="shSearchQuery" @click="shSearchQuery = ''" class="px-2 py-1 text-[10px] bg-gray-200 rounded-lg font-semibold text-gray-600">✕</button>
+            </div>
+            <div class="toolbar flex gap-1.5 px-2 py-1.5 bg-white border-b border-gray-100 items-center">
+                <div class="flex rounded-lg overflow-hidden border border-gray-200 shrink-0">
+                    <button @click="shFilterBy = 'branch'; shFilterValue = ''" :class="shFilterBy === 'branch' ? 'bg-gray-700 text-white' : 'bg-gray-50 text-gray-600'" class="px-2 py-1 text-[10px] font-semibold transition-colors">Branch Filter</button>
+                    <button @click="shFilterBy = 'type'; shFilterValue = ''" :class="shFilterBy === 'type' ? 'bg-gray-700 text-white' : 'bg-gray-50 text-gray-600'" class="px-2 py-1 text-[10px] font-semibold transition-colors border-l border-gray-200">Type Filter</button>
+                </div>
+                <select x-model="shFilterValue" class="flex-1 min-w-0 px-2 py-1.5 text-[10px] border border-gray-200 rounded-lg bg-gray-50">
+                    <option value="" x-text="shFilterBy === 'branch' ? 'All Branches' : 'All Types'"></option>
+                    <template x-for="opt in shFilterOptions" :key="opt">
+                        <option :value="opt" x-text="opt"></option>
+                    </template>
+                </select>
+                <button x-show="shFilterValue" @click="shFilterValue = ''" class="px-2 py-1 text-[10px] bg-gray-200 rounded-lg font-semibold text-gray-600">✕</button>
+            </div>
+
+            <!-- Flat two-row-per-item table grouped by selected criteria -->
+            <div class="bg-white overflow-x-auto">
+                <template x-for="group in groupedSecondHand" :key="group.key">
+                    <div>
+                        <!-- Group header -->
+                        <div class="px-3 py-1.5 bg-indigo-50 border-b border-indigo-100 border-t border-t-gray-200 flex items-center justify-between">
+                            <span class="font-bold text-indigo-800 text-xs" x-text="group.key"></span>
+                            <span class="text-[10px] text-indigo-600 font-semibold" x-text="group.items.length + ' devices'"></span>
+                        </div>
+                        <table class="sh-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:74px">ACQ DATE</th>
+                                    <th>PRODUCT NAME</th>
+                                    <th style="width:130px; padding-left:10px">IMEI</th>
+                                    <th class="text-right" style="width:72px">SALE PRICE</th>
+                                </tr>
+                            </thead>
+                                <template x-for="item in group.items" :key="item.id">
+                                    <template x-if="true">
+                                        <tbody>
+                                            <!-- Row 1: main info (always visible) -->
+                                            <tr class="sh-row-main">
+                                                <td class="text-[10px] text-gray-700" style="width:74px">
+                                                    <div class="font-bold text-black" x-text="item.acquiredDate || '-'"></div>
+                                                    <!-- Stock Aging display calculated from fetch map -->
+                                                    <div x-show="item.age !== undefined && item.age !== ''" class="text-[9px] text-red-600 bg-red-50 inline-block px-1 rounded mt-0.5 font-bold border border-red-100" x-text="item.age + 'd ago'"></div>
+                                                </td>
+                                                <td>
+                                                    <div class="sh-device-name" x-text="item.productName || '-'"></div>
+                                                </td>
+                                                <td class="text-[11px] font-mono text-black font-bold whitespace-nowrap" style="width:130px; padding-left:10px" x-text="item.imei || '-'"></td>
+                                                <td class="text-right">
+                                                    <span class="text-blue-600 font-bold text-[12px] whitespace-nowrap" x-text="formatCurrency(item.expectedSalesPrice)"></span>
+                                                </td>
+                                            </tr>
+                                            <!-- Row 2: other info + cost price -->
+                                            <tr class="sh-row-sub">
+                                                <td colspan="4" class="px-3 py-1.5 text-[10px] text-gray-700">
+                                                    <div class="flex flex-wrap gap-x-4 gap-y-1">
+                                                        <span><span class="font-semibold text-gray-500">BH:</span> <span :class="item.batteryHealth >= 80 ? 'text-green-600 font-bold' : item.batteryHealth >= 60 ? 'text-yellow-600 font-bold' : item.batteryHealth ? 'text-red-600 font-bold' : 'text-gray-500'" x-text="item.batteryHealth ? (item.batteryHealth + '%') : '-'"></span></span>
+                                                        <!-- Dynamic show/hide based on Group By option -->
+                                                        <span x-show="shGroupBy !== 'branch'"><span class="font-semibold text-gray-500">Branch:</span> <span x-text="item.branch || '-'"></span></span>
+                                                        <span x-show="shGroupBy !== 'type'"><span class="font-semibold text-gray-500">Type:</span> <span x-text="item.type || '-'"></span></span>
+                                                        
+                                                        <span><span class="font-semibold text-gray-500">Info:</span> <span x-text="item.otherInfo || '-'"></span></span>
+                                                        <span>
+                                                            <span class="font-semibold text-gray-500">Cost:</span>
+                                                            <span x-show="showAllPrices" class="text-red-600 font-bold" x-text="formatCurrency(item.costPrice)"></span>
+                                                            <span x-show="!showAllPrices" class="dots-cost">•••</span>
+                                                        </span>
+                                                        <template x-if="showAllPrices">
+                                                            <span>
+                                                                <span class="font-semibold text-gray-500">Margin:</span>
+                                                                <span :class="(item.expectedSalesPrice - item.costPrice) >= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'"
+                                                                      x-text="item.costPrice > 0 ? (((item.expectedSalesPrice - item.costPrice) >= 0 ? '+' : '') + ((item.expectedSalesPrice - item.costPrice) / item.costPrice * 100).toFixed(1) + '%') : '-'"></span>
+                                                            </span>
+                                                        </template>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </template>
+                                </template>
+                        </table>
+                    </div>
+                </template>
+            </div>
+            <div x-show="groupedSecondHand.length === 0" class="bg-white p-10 text-center text-gray-400 font-semibold text-xs">No devices found.</div>
+        </div>
+
+        <!-- ================= TAB 4: SUMMARY ================= -->
         <div x-show="activeTab === 'summary'" class="summary-layout p-3 space-y-4">
-            <div class="bg-white shadow-sm rounded-xl overflow-hidden border border-gray-200">
-                <div class="bg-purple-50 px-4 py-2 border-b border-purple-100">
-                    <h3 class="font-bold text-purple-900 text-sm">🏷️ Accessories Overview by Brand</h3>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                <div class="bg-white p-3 border-l-4 border-blue-500">
+                    <p class="text-[9px] text-gray-500 font-semibold uppercase">Unique Items</p>
+                    <p class="text-base font-bold text-blue-700" x-text="physicalStockReport.totals.productCount.toLocaleString()"></p>
+                </div>
+                <div class="bg-white p-3 border-l-4 border-emerald-500">
+                    <p class="text-[9px] text-gray-500 font-semibold uppercase">Net Stock Quantity</p>
+                    <p class="text-base font-bold text-emerald-700" x-text="physicalStockReport.totals.totalQuantity.toLocaleString()"></p>
+                </div>
+                <div class="bg-white p-3 border-l-4 border-orange-500">
+                    <p class="text-[9px] text-gray-500 font-semibold uppercase">Inventory Value</p>
+                    <p class="text-base font-bold text-orange-700" x-text="formatStockValue(physicalStockReport.totals.totalValue)"></p>
+                </div>
+                <div class="bg-white p-3 border-l-4 border-red-500">
+                    <p class="text-[9px] text-gray-500 font-semibold uppercase">Negative Batch Records</p>
+                    <p class="text-base font-bold text-red-600" x-text="physicalStockReport.totals.negativeBatchCount.toLocaleString()"></p>
+                </div>
+            </div>
+
+            <section class="bg-white border border-gray-200 overflow-hidden">
+                <div class="px-3 py-2 border-b border-gray-200 flex items-center justify-between">
+                    <h3 class="font-bold text-gray-800 text-sm">Stock by Branch / Warehouse</h3>
+                    <span class="text-[10px] text-gray-500" x-text="physicalStockReport.totals.batchCount.toLocaleString() + ' batch records'"></span>
+                </div>
+                <div class="divide-y divide-gray-200">
+                    <template x-for="branch in physicalStockReport.branches" :key="branch.name">
+                        <div class="px-3 py-2 grid grid-cols-[minmax(0,1fr)_auto] gap-3 items-center">
+                            <div class="min-w-0">
+                                <p class="font-bold text-gray-800 text-xs" x-text="branch.name"></p>
+                                <p class="text-[10px] text-gray-500" x-text="branch.productCount.toLocaleString() + ' items · ' + branch.batchCount.toLocaleString() + ' batch rows'"></p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-mono font-bold text-xs" :class="branch.quantity < 0 ? 'text-red-600' : 'text-gray-800'" x-text="branch.quantity.toLocaleString() + ' net units'"></p>
+                                <p class="font-mono text-[11px] font-semibold" :class="branch.value < 0 ? 'text-red-600' : 'text-gray-600'" x-text="formatStockValue(branch.value)"></p>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </section>
+
+            <section class="bg-white border border-gray-200 overflow-hidden">
+                <div class="px-3 py-2 border-b border-gray-200 flex items-center justify-between">
+                    <h3 class="font-bold text-gray-800 text-sm">Stock by Product Category</h3>
+                    <span class="text-[10px] text-gray-500" x-text="physicalStockReport.categories.length + ' categories'"></span>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="dense-table w-full text-left text-xs">
-                        <thead class="bg-gray-50 text-gray-500 uppercase text-[10px]">
-                            <tr>
-                                <th class="px-3 py-2 border-b">Brand</th>
-                                <th class="px-3 py-2 border-b text-right">Items</th>
-                                <th class="px-3 py-2 border-b text-right">Avg Cost</th>
-                                <th class="px-3 py-2 border-b text-right">Avg Sale</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            <template x-for="b in brandStats" :key="b.name">
-                                <tr class="hover:bg-purple-50">
-                                    <td class="px-3 py-2 font-bold text-gray-800" x-text="b.name"></td>
-                                    <td class="px-3 py-2 text-right font-mono text-gray-600" x-text="b.count"></td>
-                                    <td class="px-3 py-2 text-right font-mono text-red-600 font-bold" x-text="showAllPrices ? formatCurrency(b.avgCost) : '••••'"></td>
-                                    <td class="px-3 py-2 text-right font-mono text-blue-700 font-bold" x-text="formatCurrency(b.avgMrp)"></td>
+                    <table class="dense-table w-full">
+                        <thead><tr><th>Category</th><th class="text-right">Unique Items</th><th class="text-right">Net Qty</th><th class="text-right">Stock Value</th><th class="text-right">Batch Rows</th></tr></thead>
+                        <tbody>
+                            <template x-for="category in physicalStockReport.categories" :key="category.name">
+                                <tr>
+                                    <td class="font-bold text-gray-800" x-text="category.name"></td>
+                                    <td class="text-right" x-text="category.productCount.toLocaleString()"></td>
+                                    <td class="text-right font-mono" :class="category.quantity < 0 ? 'text-red-600 font-bold' : ''" x-text="category.quantity.toLocaleString()"></td>
+                                    <td class="text-right font-mono font-semibold" x-text="formatStockValue(category.value)"></td>
+                                    <td class="text-right" x-text="category.batchCount.toLocaleString()"></td>
                                 </tr>
                             </template>
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </section>
+
+            <section class="bg-white border border-gray-200 overflow-hidden">
+                <div class="px-3 py-2 border-b border-gray-200">
+                    <h3 class="font-bold text-gray-800 text-sm">Stock by Main Product Group</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="dense-table w-full">
+                        <thead><tr><th>Main Group</th><th class="text-right">Unique Items</th><th class="text-right">Net Qty</th><th class="text-right">Stock Value</th><th class="text-right">Batch Rows</th></tr></thead>
+                        <tbody>
+                            <template x-for="group in physicalStockReport.mainGroups" :key="group.name">
+                                <tr>
+                                    <td class="font-bold text-gray-800" x-text="group.name"></td>
+                                    <td class="text-right" x-text="group.productCount.toLocaleString()"></td>
+                                    <td class="text-right font-mono" :class="group.quantity < 0 ? 'text-red-600 font-bold' : ''" x-text="group.quantity.toLocaleString()"></td>
+                                    <td class="text-right font-mono font-semibold" x-text="formatStockValue(group.value)"></td>
+                                    <td class="text-right" x-text="group.batchCount.toLocaleString()"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="bg-white border border-gray-200 overflow-hidden">
+                <div class="px-3 py-2 border-b border-gray-200">
+                    <h3 class="font-bold text-gray-800 text-sm">Stock by Supplier</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="dense-table w-full">
+                        <thead><tr><th>Supplier</th><th class="text-right">Unique Items</th><th class="text-right">Net Qty</th><th class="text-right">Stock Value</th><th class="text-right">Batch Rows</th></tr></thead>
+                        <tbody>
+                            <template x-for="supplier in physicalStockReport.suppliers" :key="supplier.name">
+                                <tr>
+                                    <td class="font-bold text-gray-800" x-text="supplier.name"></td>
+                                    <td class="text-right" x-text="supplier.productCount.toLocaleString()"></td>
+                                    <td class="text-right font-mono" :class="supplier.quantity < 0 ? 'text-red-600 font-bold' : ''" x-text="supplier.quantity.toLocaleString()"></td>
+                                    <td class="text-right font-mono font-semibold" x-text="formatStockValue(supplier.value)"></td>
+                                    <td class="text-right" x-text="supplier.batchCount.toLocaleString()"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="bg-white border border-gray-200 overflow-hidden">
+                <div class="px-3 py-2 border-b border-gray-200">
+                    <h3 class="font-bold text-gray-800 text-sm">Branch by Category</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="dense-table w-full">
+                        <thead><tr><th>Branch / Warehouse</th><th>Category</th><th class="text-right">Items</th><th class="text-right">Net Qty</th><th class="text-right">Stock Value</th></tr></thead>
+                        <tbody>
+                            <template x-for="(row, index) in physicalStockReport.branchCategories" :key="row.branch + row.name + index">
+                                <tr>
+                                    <td class="font-semibold text-gray-800" x-text="row.branch"></td>
+                                    <td x-text="row.name"></td>
+                                    <td class="text-right" x-text="row.productCount.toLocaleString()"></td>
+                                    <td class="text-right font-mono" :class="row.quantity < 0 ? 'text-red-600 font-bold' : ''" x-text="row.quantity.toLocaleString()"></td>
+                                    <td class="text-right font-mono" x-text="formatStockValue(row.value)"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="bg-white border border-gray-200 overflow-hidden">
+                <div class="px-3 py-2 border-b border-gray-200">
+                    <h3 class="font-bold text-gray-800 text-sm">Branch by Main Product Group</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="dense-table w-full">
+                        <thead><tr><th>Branch / Warehouse</th><th>Main Group</th><th class="text-right">Items</th><th class="text-right">Net Qty</th><th class="text-right">Stock Value</th></tr></thead>
+                        <tbody>
+                            <template x-for="(row, index) in physicalStockReport.branchGroups" :key="row.branch + row.name + index">
+                                <tr>
+                                    <td class="font-semibold text-gray-800" x-text="row.branch"></td>
+                                    <td x-text="row.name"></td>
+                                    <td class="text-right" x-text="row.productCount.toLocaleString()"></td>
+                                    <td class="text-right font-mono" :class="row.quantity < 0 ? 'text-red-600 font-bold' : ''" x-text="row.quantity.toLocaleString()"></td>
+                                    <td class="text-right font-mono" x-text="formatStockValue(row.value)"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section x-show="physicalStockReport.negativeBalances.length" class="bg-white border border-red-200 overflow-hidden">
+                <div class="px-3 py-2 border-b border-red-200 flex items-center justify-between">
+                    <h3 class="font-bold text-red-800 text-sm">Negative Stock Rows</h3>
+                    <span class="text-[10px] text-red-700" x-text="physicalStockReport.negativeBalances.length + ' branch balances below zero'"></span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="dense-table w-full">
+                        <thead><tr><th>Branch / Warehouse</th><th>Item Code</th><th>Product</th><th>Category</th><th>Batch</th><th class="text-right">Qty</th><th class="text-right">Value</th></tr></thead>
+                        <tbody>
+                            <template x-for="(row, index) in physicalStockReport.negativeBalances" :key="row.code + row.batch + row.branch + index">
+                                <tr>
+                                    <td class="font-semibold text-red-700" x-text="row.branch"></td>
+                                    <td class="font-mono" x-text="row.code"></td>
+                                    <td x-text="row.name"></td>
+                                    <td x-text="row.category"></td>
+                                    <td class="font-mono" x-text="row.batch"></td>
+                                    <td class="text-right font-mono font-bold text-red-700" x-text="row.quantity.toLocaleString()"></td>
+                                    <td class="text-right font-mono" x-text="formatStockValue(row.value)"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="bg-white border border-gray-200 overflow-hidden">
+                <div class="px-3 py-2 border-b border-gray-200 flex items-center justify-between">
+                    <h3 class="font-bold text-gray-800 text-sm">Highest Net Stock Products</h3>
+                    <span class="text-[10px] text-gray-500">Top 20 by quantity</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="dense-table w-full">
+                        <thead><tr><th>Item Code</th><th>Product</th><th>Category</th><th>Main Group</th><th class="text-right">Net Qty</th><th class="text-right">Stock Value</th><th class="text-right">Batches</th></tr></thead>
+                        <tbody>
+                            <template x-for="product in physicalStockReport.topProducts" :key="product.key">
+                                <tr>
+                                    <td class="font-mono text-gray-600" x-text="product.code"></td>
+                                    <td class="font-semibold text-gray-800" x-text="product.name"></td>
+                                    <td x-text="product.category"></td>
+                                    <td x-text="product.mainGroup"></td>
+                                    <td class="text-right font-mono" :class="product.quantity < 0 ? 'text-red-600 font-bold' : ''" x-text="product.quantity.toLocaleString()"></td>
+                                    <td class="text-right font-mono" x-text="formatStockValue(product.value)"></td>
+                                    <td class="text-right" x-text="product.batchCount.toLocaleString()"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            <p x-show="physicalStockReport.totals.batchCount === 0" class="bg-white p-5 text-center text-gray-500 text-sm">No physical stock data is cached. Sync the inventory or open the stock scanner to load it.</p>
         </div>
 
     </main>
+    
+    <!-- Smart Hide/Show Scroll Navigation Bar -->
+    <nav class="app-nav fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[540px] z-50 pb-safe pointer-events-none transition-transform duration-300 ease-in-out"
+         :class="showNav ? 'translate-y-0' : 'translate-y-[150%]'">
+        <div class="flex justify-around pt-2 pb-1 mx-3 mb-4 bg-gray-100 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-200 pointer-events-auto">
+            
+            <button @click="switchTab('secondhand')"
+                class="flex-1 flex flex-col items-center justify-center pb-1 gap-0.5 transition-all duration-200 relative">
+                <span :class="activeTab === 'secondhand' ? 'bg-blue-100' : 'bg-transparent'" class="w-12 h-8 flex items-center justify-center rounded-full transition-all duration-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-colors duration-200" :class="activeTab === 'secondhand' ? 'text-blue-600' : 'text-gray-400'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                </span>
+                <span class="text-[10px] font-semibold transition-colors duration-200" :class="activeTab === 'secondhand' ? 'text-blue-600' : 'text-gray-400'">Used</span>
+            </button>
+
+            <button @click="switchTab('list')"
+                class="flex-1 flex flex-col items-center justify-center pb-1 gap-0.5 transition-all duration-200 relative">
+                <span :class="activeTab === 'list' ? 'bg-blue-100' : 'bg-transparent'" class="w-12 h-8 flex items-center justify-center rounded-full transition-all duration-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-colors duration-200" :class="activeTab === 'list' ? 'text-blue-600' : 'text-gray-400'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                </span>
+                <span class="text-[10px] font-semibold transition-colors duration-200" :class="activeTab === 'list' ? 'text-blue-600' : 'text-gray-400'">Accessories</span>
+            </button>
+
+            <button @click="switchTab('analytics')"
+                class="flex-1 flex flex-col items-center justify-center pb-1 gap-0.5 transition-all duration-200 relative">
+                <span :class="activeTab === 'analytics' ? 'bg-blue-100' : 'bg-transparent'" class="w-12 h-8 flex items-center justify-center rounded-full transition-all duration-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-colors duration-200" :class="activeTab === 'analytics' ? 'text-blue-600' : 'text-gray-400'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                </span>
+                <span class="text-[10px] font-semibold transition-colors duration-200" :class="activeTab === 'analytics' ? 'text-blue-600' : 'text-gray-400'">Metrics</span>
+            </button>
+
+            <button @click="switchTab('summary')"
+                class="flex-1 flex flex-col items-center justify-center pb-1 gap-0.5 transition-all duration-200 relative">
+                <span :class="activeTab === 'summary' ? 'bg-blue-100' : 'bg-transparent'" class="w-12 h-8 flex items-center justify-center rounded-full transition-all duration-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-colors duration-200" :class="activeTab === 'summary' ? 'text-blue-600' : 'text-gray-400'" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                    </svg>
+                </span>
+                <span class="text-[10px] font-semibold transition-colors duration-200" :class="activeTab === 'summary' ? 'text-blue-600' : 'text-gray-400'">Summary</span>
+            </button>
+            
+        </div>
+    </nav>
+
 </div>
 
-<script>
-function catalogApp() {
-    return {
-        // EXACT TAB MAPPING
-        googleSheetId: '1Bbdlx6P8VoxirhhzivUNtvIWWw9ROhJ3', 
-        sheetTabAccessories: 'Sheet1',        // Accessories UI
-        sheetTabSecondHand: 'Sheet2',         // Second Hand UI
-        sheetTabProductScan: 'physical stock',// Product Scan UI Data
-        
-        activeTab: 'list',
-        loading: false,
-        showAllPrices: false,
-        lastSynced: '',
-        searchQuery: '',
-        filterBrand: '',
-        filterType: '',
-        products: [],
-        secondHandProducts: [],
-
-        init() {
-            this.loadFromCache();
-            const lastSyncDate = localStorage.getItem('inv_last_sync_date');
-            const todayDate = new Date().toISOString().split('T')[0];
-
-            if (lastSyncDate !== todayDate || this.products.length === 0) {
-                this.fetchData();
-            }
-        },
-
-        switchTab(tab) {
-            this.activeTab = tab;
-        },
-
-        toggleAllPrices() {
-            this.showAllPrices = !this.showAllPrices;
-        },
-
-        clearAllFilters() {
-            this.searchQuery = '';
-            this.filterBrand = '';
-            this.filterType = '';
-        },
-
-        setBrandFilter(b) {
-            this.filterBrand = b;
-            this.activeTab = 'list';
-        },
-
-        setTypeFilter(t) {
-            this.filterType = t;
-            this.activeTab = 'list';
-        },
-
-        loadFromCache() {
-            const cachedProducts = localStorage.getItem('inv_products');
-            if (cachedProducts) this.products = JSON.parse(cachedProducts);
-
-            const cachedSecondHand = localStorage.getItem('inv_secondhand');
-            if (cachedSecondHand) this.secondHandProducts = JSON.parse(cachedSecondHand);
-
-            this.lastSynced = localStorage.getItem('inv_last_synced_time') || '';
-        },
-
-        async fetchData() {
-            this.loading = true;
-            try {
-                const baseUrl = `https://docs.google.com/spreadsheets/d/${this.googleSheetId}/gviz/tq?tqx=out:csv&sheet=`;
-
-                // Fetch Sheet1, Sheet2, and physical stock in parallel
-                const [resAcc, resSH, resScan] = await Promise.all([
-                    fetch(baseUrl + encodeURIComponent(this.sheetTabAccessories)),
-                    fetch(baseUrl + encodeURIComponent(this.sheetTabSecondHand)),
-                    fetch(baseUrl + encodeURIComponent(this.sheetTabProductScan))
-                ]);
-
-                if (!resAcc.ok) throw new Error(`Failed to load tab "${this.sheetTabAccessories}"`);
-
-                const csvAcc = await resAcc.text();
-                this.products = this.parseCSV(csvAcc);
-
-                if (resSH.ok) {
-                    const csvSH = await resSH.text();
-                    this.secondHandProducts = this.parseCSV(csvSH);
-                }
-
-                if (resScan.ok) {
-                    const csvScan = await resScan.text();
-                    const scanData = this.parseCSV(csvScan);
-                    localStorage.setItem('inv_scan_products', JSON.stringify(scanData));
-                }
-
-                const now = new Date();
-                const todayDate = now.toISOString().split('T')[0];
-                const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-                this.lastSynced = `${todayDate} ${timeString}`;
-                localStorage.setItem('inv_products', JSON.stringify(this.products));
-                localStorage.setItem('inv_secondhand', JSON.stringify(this.secondHandProducts));
-                localStorage.setItem('inv_last_synced_time', this.lastSynced);
-                localStorage.setItem('inv_last_sync_date', todayDate);
-
-            } catch (error) {
-                console.error("Sync Error:", error);
-                alert(`Sync failed. Please ensure your Google Sheet permissions are set to "Anyone with the link can view". Error details: ${error.message}`);
-            } finally {
-                this.loading = false;
-            }
-        },
-
-        parseCSV(csv) {
-            const lines = csv.split('\n');
-            if (lines.length < 2) return [];
-
-            const parseLine = (line) => {
-                const values = [];
-                let insideQuote = false;
-                let currentValue = '';
-                for (let i = 0; i < line.length; i++) {
-                    const char = line[i];
-                    if (char === '"' && (i === 0 || line[i-1] !== '\\')) {
-                        insideQuote = !insideQuote;
-                    } else if (char === ',' && !insideQuote) {
-                        values.push(currentValue.replace(/^"|"$/g, '').trim());
-                        currentValue = '';
-                    } else {
-                        currentValue += char;
-                    }
-                }
-                values.push(currentValue.replace(/^"|"$/g, '').trim());
-                return values;
-            };
-
-            const headers = parseLine(lines[0]).map(h => h.toLowerCase());
-            const items = [];
-
-            for (let i = 1; i < lines.length; i++) {
-                if (!lines[i].trim()) continue;
-                const row = parseLine(lines[i]);
-                
-                const item = {
-                    id: i,
-                    brand: row[headers.indexOf('brand')] >= 0 ? row[headers.indexOf('brand')] : row[0] || '',
-                    type: row[headers.indexOf('type')] >= 0 ? row[headers.indexOf('type')] : row[1] || '',
-                    name: row[headers.indexOf('product name')] >= 0 ? row[headers.indexOf('product name')] : row[headers.indexOf('name')] >= 0 ? row[headers.indexOf('name')] : row[2] || '',
-                    mrp: parseFloat((row[headers.indexOf('mrp')] >= 0 ? row[headers.indexOf('mrp')] : row[3] || '0').replace(/[^0-9.-]+/g,"")) || 0,
-                    cost: parseFloat((row[headers.indexOf('cost')] >= 0 ? row[headers.indexOf('cost')] : row[4] || '0').replace(/[^0-9.-]+/g,"")) || 0,
-                    barcode: row[headers.indexOf('barcode')] >= 0 ? row[headers.indexOf('barcode')] : row[headers.indexOf('imei')] >= 0 ? row[headers.indexOf('imei')] : row[5] || ''
-                };
-
-                if (item.name) items.push(item);
-            }
-            return items;
-        },
-
-        get uniqueBrands() {
-            return [...new Set(this.products.map(p => p.brand).filter(Boolean))].sort();
-        },
-
-        get uniqueTypes() {
-            return [...new Set(this.products.map(p => p.type).filter(Boolean))].sort();
-        },
-
-        get filteredProducts() {
-            return this.products.filter(p => {
-                const query = this.searchQuery.toLowerCase();
-                const matchesSearch = !query || 
-                    (p.name && p.name.toLowerCase().includes(query)) ||
-                    (p.brand && p.brand.toLowerCase().includes(query)) ||
-                    (p.type && p.type.toLowerCase().includes(query)) ||
-                    (p.barcode && p.barcode.toLowerCase().includes(query));
-
-                const matchesBrand = !this.filterBrand || p.brand === this.filterBrand;
-                const matchesType = !this.filterType || p.type === this.filterType;
-
-                return matchesSearch && matchesBrand && matchesType;
-            });
-        },
-
-        get totalMrpValue() {
-            return this.products.reduce((sum, p) => sum + (p.mrp || 0), 0);
-        },
-
-        get totalCostValue() {
-            return this.products.reduce((sum, p) => sum + (p.cost || 0), 0);
-        },
-
-        get totalProfit() {
-            return this.totalMrpValue - this.totalCostValue;
-        },
-
-        get avgMarginPercent() {
-            return this.totalCostValue > 0 ? (this.totalProfit / this.totalCostValue) * 100 : 0;
-        },
-
-        get brandStats() {
-            const stats = {};
-            this.products.forEach(p => {
-                const b = p.brand || 'Unbranded';
-                if (!stats[b]) stats[b] = { name: b, count: 0, totalCost: 0, totalMrp: 0 };
-                stats[b].count++;
-                stats[b].totalCost += p.cost || 0;
-                stats[b].totalMrp += p.mrp || 0;
-            });
-            return Object.values(stats).map(s => ({
-                ...s,
-                avgCost: s.count ? s.totalCost / s.count : 0,
-                avgMrp: s.count ? s.totalMrp / s.count : 0
-            }));
-        },
-
-        formatCurrency(amount) {
-            return '$' + (amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        },
-
-        cleanCurrencyText(val) {
-            if (typeof val === 'number') return this.formatCurrency(val);
-            return val || '$0.00';
-        }
-    };
-}
-</script>
+    <script src="script.js"></script>
 </body>
 </html>
