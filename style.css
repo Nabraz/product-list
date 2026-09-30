@@ -1,0 +1,98 @@
+
+        body { background: #f0f2f5; }
+        .app-shell { width: 100%; max-width: 540px; margin: 0 auto; display: flex; flex-direction: column; min-height: 100vh; position: relative; }
+        main { padding-bottom: calc(84px + max(env(safe-area-inset-bottom), 20px)); }
+
+        /* Dense table */
+        .dense-table { font-size: 11px; border-collapse: collapse; width: 100%; }
+        .dense-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; padding: 5px 6px; background: #374151; color: #fff; font-weight: 700; text-align: left; }
+        .dense-table td { padding: 5px 6px; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
+        .dense-table tr:hover td { background: #f9fafb; }
+
+        /* Used phone two-row table */
+        .sh-table { font-size: 11px; border-collapse: collapse; width: 100%; }
+        .sh-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; padding: 5px 6px; background: #374151; color: #fff; font-weight: 700; text-align: left; }
+        .sh-table td { padding: 4px 6px; vertical-align: top; }
+        .sh-row-main td { border-bottom: none; }
+        .sh-row-main:hover td { background: #f9fafb; }
+        /* Gap between used phones */
+        .sh-row-sub td { border-bottom: 6px solid #f0f2f5; padding-top: 0; padding-bottom: 6px; background: #f9fafb; }
+        .sh-device-name { font-weight: 700; font-size: 12px; color: #000000; line-height: 1.3; }
+        .brand-cell .brand-name { color: #1d4ed8; font-weight: 700; font-size: 11px; display: block; line-height: 1.2; }
+        .brand-cell .type-badge { color: #6b7280; font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-top: 1px; }
+        .mrp-cell { font-size: 11px; color: #1d4ed8; font-weight: 700; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
+        .cost-cell { font-size: 11px; color: #dc2626; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .product-name { font-size: 11px; color: #111827; font-weight: 500; line-height: 1.3; }
+        .dots-cost { color: #dc2626; letter-spacing: 2px; font-size: 9px; }
+
+        .analytics-charts > div { min-width: 0; }
+        .analytics-charts canvas { display: block; width: 100%; height: 240px !important; }
+        .summary-layout .dense-table { min-width: 760px; }
+        .summary-layout .dense-table th,
+        .summary-layout .dense-table td { white-space: nowrap; }
+        .summary-layout .dense-table td:nth-child(2) { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+
+        @media (min-width: 1024px) {
+            body { padding: 24px; }
+            .app-shell { max-width: 1280px; }
+            header {
+                border-radius: 20px 20px 0 0;
+                overflow: hidden;
+            }
+            main {
+                padding-bottom: calc(112px + max(env(safe-area-inset-bottom), 20px));
+            }
+            .summary-grid {
+                display: grid !important;
+                grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+                gap: 12px;
+                padding: 16px;
+            }
+            .toolbar {
+                flex-wrap: wrap;
+                gap: 10px;
+                padding: 14px 16px;
+            }
+            .toolbar input,
+            .toolbar select {
+                min-height: 42px;
+                font-size: 13px !important;
+            }
+            .toolbar select {
+                max-width: none !important;
+            }
+            .toolbar button {
+                min-height: 42px;
+                font-size: 12px !important;
+            }
+            .analytics-layout,
+            .summary-layout {
+                padding: 20px;
+            }
+            .analytics-layout > .grid.grid-cols-2 {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+            .analytics-charts {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 16px;
+            }
+            .analytics-charts > * {
+                margin-top: 0 !important;
+            }
+            .dense-table { font-size: 12px; }
+            .dense-table th { font-size: 10px; padding: 7px 8px; }
+            .dense-table td { padding: 7px 8px; }
+            .sh-table { font-size: 12px; }
+            .sh-device-name { font-size: 13px; }
+            .app-nav {
+                max-width: 1180px !important;
+                padding-bottom: 24px;
+            }
+            .app-nav > div {
+                max-width: 920px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+        }
+    
