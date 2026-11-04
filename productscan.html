@@ -1,270 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Physical Stock Inspector</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <style>
-        body { background: #f0f2f5; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
-        .app-shell { width: 100%; max-width: 540px; margin: 0 auto; display: flex; flex-direction: column; min-height: 100vh; position: relative; }
-        main { padding-bottom: calc(84px + max(env(safe-area-inset-bottom), 20px)); }
-        .dense-table { font-size: 11px; border-collapse: collapse; width: 100%; }
-        .dense-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; padding: 5px 6px; background: #374151; color: #fff; font-weight: 700; text-align: left; }
-        .dense-table td { padding: 5px 6px; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
-        .dense-table tr:hover td { background: #f9fafb; }
-        .sh-table { font-size: 11px; border-collapse: collapse; width: 100%; }
-        .sh-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; padding: 5px 6px; background: #374151; color: #fff; font-weight: 700; text-align: left; }
-        .sh-table td { padding: 4px 6px; vertical-align: top; }
-        .sh-row-main td { border-bottom: none; }
-        .sh-row-main:hover td { background: #f9fafb; }
-        .sh-row-sub td { border-bottom: 6px solid #f0f2f5; padding-top: 0; padding-bottom: 6px; background: #f9fafb; }
-        .sh-device-name { font-weight: 700; font-size: 12px; color: #000000; line-height: 1.3; }
-        .brand-cell .brand-name { color: #1d4ed8; font-weight: 700; font-size: 11px; display: block; line-height: 1.2; }
-        .brand-cell .type-badge { color: #6b7280; font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-top: 1px; }
-        .mrp-cell { font-size: 11px; color: #1d4ed8; font-weight: 700; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
-        .cost-cell { font-size: 11px; color: #dc2626; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-        .product-name { font-size: 11px; color: #111827; font-weight: 500; line-height: 1.3; }
-        .dots-cost { color: #dc2626; letter-spacing: 2px; font-size: 9px; }
-        @media (min-width: 1024px) {
-            body { padding: 24px; }
-            .app-shell { max-width: 1280px; }
-            header { border-radius: 20px 20px 0 0; overflow: hidden; }
-            main { padding-bottom: calc(112px + max(env(safe-area-inset-bottom), 20px)); }
-            .summary-grid { display: grid !important; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; padding: 16px; }
-            .toolbar { flex-wrap: wrap; gap: 10px; padding: 14px 16px; }
-            .toolbar input, .toolbar select { min-height: 42px; font-size: 13px !important; }
-            .toolbar select { max-width: none !important; }
-            .toolbar button { min-height: 42px; font-size: 12px !important; }
-            .analytics-layout, .summary-layout { padding: 20px; }
-            .analytics-layout > .grid.grid-cols-2 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-            .analytics-charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-            .analytics-charts > * { margin-top: 0 !important; }
-            .dense-table { font-size: 12px; }
-            .dense-table th { font-size: 10px; padding: 7px 8px; }
-            .dense-table td { padding: 7px 8px; }
-            .sh-table { font-size: 12px; }
-            .sh-device-name { font-size: 13px; }
-            .app-nav { max-width: 1180px !important; padding-bottom: 24px; }
-            .app-nav > div { max-width: 920px; margin-left: auto; margin-right: auto; }
-        }
-        #reader video { border-radius: 10px; object-fit: cover; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Physical Stock Inspector</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<style>
+body{background:#f0f2f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif}.app-shell{width:100%;max-width:540px;margin:0 auto;display:flex;flex-direction:column;min-height:100vh;position:relative}main{padding:10px 12px calc(84px + max(env(safe-area-inset-bottom),20px))}.dense-table{font-size:11px;border-collapse:collapse;width:100%}.dense-table th{font-size:10px;text-transform:uppercase;letter-spacing:.04em;padding:5px 6px;background:#374151;color:#fff;font-weight:700;text-align:left}.dense-table td{padding:5px 6px;border-bottom:1px solid #e5e7eb;vertical-align:middle}.dense-table tr:hover td{background:#f9fafb}.product-name{font-size:11px;color:#111827;font-weight:500;line-height:1.3}.warehouse-highlight{background:#eef2ff!important;border-color:#4f46e5!important;box-shadow:0 0 0 2px rgba(79,70,229,.18)}.warehouse-highlight-label{color:#3730a3!important;font-weight:800!important}#reader{max-height:300px}#reader video{max-height:250px;border-radius:8px;object-fit:cover}#reader__dashboard{padding:2px!important;margin:0!important}#reader__dashboard_section,#reader__dashboard_section_csr{margin:0!important;padding:2px 4px!important;min-height:0!important}#reader__header_message{display:none!important}#reader__scan_region{min-height:0!important;max-height:260px;padding:0!important}#reader__scan_region video{max-height:250px!important;object-fit:cover!important}#reader button,#reader select{font-size:11px!important;padding:4px 7px!important;min-height:30px!important}@media(min-width:1024px){body{padding:24px}.app-shell{max-width:1280px}header{border-radius:20px 20px 0 0;overflow:hidden}main{padding:16px 20px calc(112px + max(env(safe-area-inset-bottom),20px))}.dense-table{font-size:12px}.dense-table th,.dense-table td{padding:7px 8px}}
+</style>
 </head>
 <body>
 <div class="app-shell border-x border-gray-200 bg-white shadow-xl">
-    <header class="bg-gray-900 text-white p-3.5 flex items-center justify-between sticky top-0 z-50 shadow-md">
-        <div class="flex items-center gap-2">
-            <a href="index.html" class="p-1 text-gray-300 hover:text-white flex items-center gap-1 text-xs font-semibold transition-colors" aria-label="Home"><span aria-hidden="true">⌂</span><span>Home</span></a>
-            <h1 class="text-sm font-bold ml-2">Physical Stock Inspector</h1>
-        </div>
-        <div id="syncBadge" class="text-[10px] bg-gray-800 text-gray-300 border border-gray-700 px-2.5 py-1 rounded-full font-mono">Checking Cache…</div>
-    </header>
-    <main class="p-4 space-y-4">
-        <div class="bg-gray-100 border border-gray-300 rounded-xl p-2 shadow-inner relative"><div id="reader" class="w-full bg-black rounded-lg overflow-hidden"></div></div>
-        <div class="bg-white border border-gray-200 rounded-xl p-3.5 space-y-2 shadow-sm">
-            <label class="text-[10px] font-bold uppercase tracking-wider text-indigo-700 block">🏷️ Item Code Search (Aggregates All Batches)</label>
-            <div class="flex gap-2 toolbar"><input type="text" id="codeInput" placeholder="Enter exact Item Code (e.g. 111.1)…" class="flex-1 px-3 py-2 text-xs bg-gray-50 border border-gray-300 text-gray-900 rounded-lg outline-none focus:border-indigo-600 font-mono transition-colors" /><button onclick="searchByCodeManual()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-colors shadow flex items-center gap-1 shrink-0"><span>Inspect Code</span></button></div>
-        </div>
-        <div class="bg-white border border-gray-200 rounded-xl p-3.5 space-y-2 shadow-sm">
-            <label class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">🔍 Description Search (Order-Independent Tokens)</label>
-            <div class="flex gap-2 toolbar"><input type="text" id="fieldSearchInput" placeholder="e.g. 'cable c to c' or 'apple c to c org'…" class="flex-1 px-3 py-2 text-xs bg-gray-50 border border-gray-300 text-gray-900 rounded-lg outline-none focus:border-emerald-600 transition-colors" /><button onclick="searchByFieldsManual()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors shadow flex items-center gap-1 shrink-0"><span>Search Fields</span></button></div>
-        </div>
-        <div id="candidateListCard" class="hidden bg-white border border-gray-200 rounded-xl p-3.5 space-y-2 shadow-md">
-            <div class="flex justify-between items-center border-b border-gray-200 pb-2"><span id="candidateCount" class="text-[11px] font-bold text-gray-800">Matching Products</span><span class="text-[9px] text-gray-500">Tap item to inspect multi-batch stock</span></div>
-            <div id="candidateItemsContainer" class="max-h-56 overflow-y-auto space-y-1.5 pr-1"></div>
-        </div>
-        <div id="resultCard" class="hidden bg-white border border-gray-200 rounded-xl p-4 shadow-md space-y-4">
-            <div class="border-b border-gray-200 pb-3">
-                <div class="flex items-center justify-between gap-2 mb-1"><span id="resCategory" class="text-[10px] font-bold text-indigo-700 uppercase tracking-wider bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200"></span><span id="resMainGroup" class="text-[10px] text-gray-600 bg-gray-100 px-2 py-0.5 rounded font-mono"></span></div>
-                <h2 id="resName" class="product-name text-sm font-bold text-gray-900 leading-snug"></h2>
-                <div class="flex items-center gap-3 text-[11px] text-gray-600 mt-1 flex-wrap"><span>Code: <strong id="resCode" class="text-gray-900 font-mono"></strong></span><span>•</span><span>Supplier: <strong id="resSupplier" class="text-gray-900"></strong></span><span>•</span><span>Total Batches: <strong id="resBatchCount" class="text-indigo-600"></strong></span></div>
-            </div>
-            <div class="grid grid-cols-3 gap-2 text-center bg-gray-50 p-3 rounded-xl border border-gray-200"><div><span class="text-[9px] text-gray-500 block font-semibold uppercase">Avg/Primary Rate</span><span id="resRate" class="font-bold text-gray-800 text-xs">Rs. 0.00</span></div><div><span class="text-[9px] text-gray-500 block font-semibold uppercase">All Batches Qty</span><span id="res4WhQty" class="font-bold text-indigo-700 text-xs">0 Pcs</span></div><div><span class="text-[9px] text-gray-500 block font-semibold uppercase">Total Value</span><span id="res4WhVal" class="font-bold text-emerald-700 text-xs">Rs. 0.00</span></div></div>
-            <div class="space-y-2"><h3 class="text-[10px] font-bold uppercase tracking-wider text-gray-600">Consolidated Warehouse Distribution</h3><div class="grid grid-cols-2 gap-2 text-xs" id="warehouseBreakdownGrid"></div></div>
-            <div class="space-y-2 pt-2 border-t border-gray-200"><h3 class="text-[10px] font-bold uppercase tracking-wider text-gray-600">Batch Breakdown</h3><div class="overflow-x-auto rounded-lg border border-gray-200"><table class="dense-table"><thead><tr><th>Batch / ID</th><th>Rate</th><th>City Center</th><th>JWL A</th><th>JWL B</th><th>NEW ROAD</th><th>Total</th></tr></thead><tbody id="batchTableBody"></tbody></table></div></div>
-        </div>
-        <div id="notFoundCard" class="hidden bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-xs text-center font-semibold">No product matching your search criteria was found!</div>
-        <section class="bg-white border border-gray-200 rounded-xl p-4 space-y-3 shadow-sm">
-            <div class="border-b border-gray-200 pb-2 flex items-center justify-between"><h3 class="text-xs font-bold uppercase tracking-wider text-gray-800 flex items-center gap-1.5"><span>📊</span> Physical Stock Summary Statistics</h3><span class="text-[9px] text-gray-500">4 Target Warehouses</span></div>
-            <div class="summary-grid grid grid-cols-2 gap-2.5"><div class="bg-gray-50 p-2.5 rounded-lg border border-gray-200"><span class="text-[9px] text-gray-500 block uppercase font-semibold">Unique Item Codes</span><span id="statTotalItems" class="text-sm font-extrabold text-gray-900">0</span></div><div class="bg-gray-50 p-2.5 rounded-lg border border-gray-200"><span class="text-[9px] text-gray-500 block uppercase font-semibold">Aggregate Qty</span><span id="statTotalQty" class="text-sm font-extrabold text-indigo-700">0 Pcs</span></div><div class="bg-gray-50 p-2.5 rounded-lg border border-gray-200 col-span-2"><span class="text-[9px] text-gray-500 block uppercase font-semibold">Total Stock Valuation</span><span id="statTotalValue" class="text-base font-black text-emerald-700">Rs. 0.00</span></div></div>
-            <div class="space-y-1.5"><span class="text-[10px] font-bold text-gray-600 uppercase tracking-wider block">Warehouse Distribution</span><div class="grid grid-cols-2 gap-2" id="statWarehouseGrid"></div></div>
-        </section>
-    </main>
-</div>
+<header class="bg-gray-900 text-white px-3 py-2 flex items-center justify-between gap-2 sticky top-0 z-50 shadow-md">
+ <div class="flex items-center gap-2 min-w-0"><a href="index.html" class="p-1 text-gray-300 hover:text-white flex items-center gap-1 text-xs font-semibold" aria-label="Home"><span aria-hidden="true">⌂</span><span>Home</span></a><h1 class="text-sm font-bold ml-1 whitespace-nowrap">Stock Inspector</h1></div>
+ <label class="flex items-center gap-1 text-[9px] text-gray-300 shrink-0" for="defaultWarehouse"><span>Default</span><select id="defaultWarehouse" class="max-w-[125px] rounded bg-gray-800 border border-gray-600 px-1.5 py-1 text-[10px] text-white" aria-label="Default warehouse"></select></label>
+ <div id="syncBadge" class="text-[9px] bg-gray-800 text-gray-300 border border-gray-700 px-2 py-1 rounded-full font-mono whitespace-nowrap">Checking…</div>
+</header>
+<main class="space-y-3">
+ <div class="bg-gray-100 border border-gray-300 rounded-xl p-1.5 shadow-inner"><div id="reader" class="w-full bg-black rounded-lg overflow-hidden"></div></div>
+ <section class="bg-white border border-gray-200 rounded-xl p-3 space-y-2 shadow-sm"><label for="codeInput" class="text-[10px] font-bold uppercase tracking-wider text-indigo-700 block">🏷️ Item Code Search (All Batches)</label><div class="flex gap-2"><input type="text" id="codeInput" placeholder="Enter exact Item Code (e.g. 111.1)…" class="min-w-0 flex-1 px-3 py-2 text-xs bg-gray-50 border border-gray-300 rounded-lg outline-none focus:border-indigo-600 font-mono"><button onclick="searchByCodeManual()" class="px-3 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg shrink-0">Inspect Code</button></div></section>
+ <section class="bg-white border border-gray-200 rounded-xl p-3 space-y-2 shadow-sm"><label for="fieldSearchInput" class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">🔍 Description Search (Order-Independent)</label><div class="flex gap-2"><input type="text" id="fieldSearchInput" placeholder="e.g. cable c to c or apple c to c" class="min-w-0 flex-1 px-3 py-2 text-xs bg-gray-50 border border-gray-300 rounded-lg outline-none focus:border-emerald-600"><button onclick="searchByFieldsManual()" class="px-3 py-2 bg-emerald-600 text-white text-xs font-semibold rounded-lg shrink-0">Search</button></div></section>
+ <div id="candidateListCard" class="hidden bg-white border border-gray-200 rounded-xl p-3 space-y-2 shadow-md"><div class="flex justify-between items-center border-b pb-2"><span id="candidateCount" class="text-[11px] font-bold">Matching Products</span><span class="text-[9px] text-gray-500">Tap to inspect</span></div><div id="candidateItemsContainer" class="max-h-56 overflow-y-auto space-y-1.5"></div></div>
+ <section id="resultCard" class="hidden bg-white border border-gray-200 rounded-xl p-3.5 shadow-md space-y-3"><div class="border-b pb-2"><div class="flex justify-between gap-2"><span id="resCategory" class="text-[10px] font-bold text-indigo-700 uppercase"></span><span id="resMainGroup" class="text-[10px] text-gray-600"></span></div><h2 id="resName" class="product-name text-sm font-bold"></h2><div class="text-[10px] text-gray-600 mt-1 flex flex-wrap gap-2"><span>Code: <b id="resCode"></b></span><span>Supplier: <b id="resSupplier"></b></span><span>Batches: <b id="resBatchCount"></b></span></div></div>
+ <div class="grid grid-cols-3 gap-1.5 text-center bg-gray-50 p-2 rounded-lg"><div><span class="text-[9px] text-gray-500 block">AVG RATE</span><b id="resRate" class="text-[11px]"></b></div><div><span class="text-[9px] text-gray-500 block">ALL QTY</span><b id="res4WhQty" class="text-[11px] text-indigo-700"></b></div><div><span class="text-[9px] text-gray-500 block">TOTAL VALUE</span><b id="res4WhVal" class="text-[11px] text-emerald-700"></b></div></div>
+ <div><h3 class="text-[10px] font-bold uppercase text-gray-600 mb-1">Warehouse Distribution</h3><div class="grid grid-cols-2 gap-2 text-xs" id="warehouseBreakdownGrid"></div></div>
+ <div class="pt-2 border-t"><h3 class="text-[10px] font-bold uppercase text-gray-600 mb-1">Batch Breakdown</h3><div class="overflow-x-auto rounded-lg border"><table class="dense-table"><thead><tr><th>Batch / ID</th><th>Rate</th><th>City Center</th><th>Apple Store JWL</th><th>LMC</th><th>New Road</th><th>Total</th></tr></thead><tbody id="batchTableBody"></tbody></table></div></div></section>
+ <div id="notFoundCard" class="hidden bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl text-xs text-center font-semibold">No matching product found.</div>
+ <section class="bg-white border border-gray-200 rounded-xl p-3 space-y-3 shadow-sm"><div class="border-b pb-2 flex justify-between items-center"><h3 class="text-xs font-bold uppercase text-gray-800">📊 Physical Stock Summary</h3><span class="text-[9px] text-gray-500">4 Warehouses</span></div><div class="grid grid-cols-2 gap-2"><div class="bg-gray-50 p-2 rounded-lg border"><span class="text-[9px] text-gray-500 block uppercase">Unique Item Codes</span><b id="statTotalItems">0</b></div><div class="bg-gray-50 p-2 rounded-lg border"><span class="text-[9px] text-gray-500 block uppercase">Aggregate Qty</span><b id="statTotalQty" class="text-indigo-700">0 Pcs</b></div><div class="bg-gray-50 p-2 rounded-lg border col-span-2"><span class="text-[9px] text-gray-500 block uppercase">Total Stock Valuation</span><b id="statTotalValue" class="text-emerald-700">Rs. 0.00</b></div></div><div><span class="text-[10px] font-bold text-gray-600 uppercase block mb-1">Warehouse Distribution</span><div class="grid grid-cols-2 gap-2" id="statWarehouseGrid"></div></div></section>
+</main></div>
 <script>
-    let rawPhysicalProducts = [];
-    const TARGET_WAREHOUSES = [
-        { id: 'CITY CENTER WAREHOUSE', name: 'City Center Warehouse', short: 'City Center' },
-        { id: 'Jawalakhel A', name: 'Jawalakhel A', short: 'JWL A' },
-        { id: 'Jawalakhel B', name: 'Jawalakhel B', short: 'JWL B' },
-        { id: 'NEW ROAD WAREHOUSE', name: 'NEW ROAD WAREHOUSE', short: 'NEW ROAD' }
-    ];
-    function formatNumber(num) { return (num || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-    function escapeHtml(value) {
-        return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
-    }
-    function loadCachedData() {
-        const item = localStorage.getItem('inv_scan_products') || localStorage.getItem('physicalStock');
-        const badge = document.getElementById('syncBadge');
-        if (item) {
-            try {
-                let parsed = JSON.parse(item);
-                if (Array.isArray(parsed) && parsed.length > 0) {
-                    rawPhysicalProducts = parsed;
-                    badge.innerText = `${rawPhysicalProducts.length} Batch Records`;
-                    badge.className = "text-[10px] bg-emerald-900 text-emerald-200 border border-emerald-700 px-2.5 py-1 rounded-full font-mono";
-                    calculateGlobalStatistics();
-                    return;
-                }
-            } catch (e) { console.error("Failed to parse cached stock data", e); }
-        }
-        badge.innerText = "0 Items Loaded";
-        badge.className = "text-[10px] bg-amber-900 text-amber-200 border border-amber-700 px-2.5 py-1 rounded-full font-mono";
-    }
-    function consolidateItemRows(rows) {
-        if (!rows || rows.length === 0) return null;
-        const primary = rows[0];
-        const name = primary['ITEM NAME'] || primary.productName || 'Unnamed Product';
-        const code = primary['ITEM CODE'] || primary.itemCode || 'N/A';
-        const category = primary['CATEGORY'] || primary.category || 'General';
-        const mainGroup = primary['MAIN GROUP'] || primary.mainGroup || '';
-        const supplier = primary['SUPPLIER'] || primary.supplier || 'N/A';
-        const unit = primary['UNIT'] || primary.unit || 'Pcs.';
-        let whTotals = { 'CITY CENTER WAREHOUSE': 0, 'Jawalakhel A': 0, 'Jawalakhel B': 0, 'NEW ROAD WAREHOUSE': 0 };
-        let totalQty = 0, totalValue = 0, batchDetails = [];
-        rows.forEach(r => {
-            const batchName = r['BATCH'] || r.batch || r['BATCHID'] || r.batchid || 'Default Batch';
-            const rate = parseFloat(r['RATE'] || r.rate || 0) || 0;
-            let rowQty = 0, rowWhs = {};
-            TARGET_WAREHOUSES.forEach(w => {
-                const q = parseFloat(r[w.id] || 0) || 0;
-                rowWhs[w.id] = q; whTotals[w.id] += q; rowQty += q;
-            });
-            totalQty += rowQty; totalValue += rowQty * rate;
-            batchDetails.push({ batchName, rate, rowQty, rowValue: rowQty * rate, whs: rowWhs });
-        });
-        const primaryRate = parseFloat(primary['RATE'] || primary.rate || 0) || 0;
-        const avgRate = totalQty > 0 ? totalValue / totalQty : primaryRate;
-        return { name, code, category, mainGroup, supplier, unit, avgRate, totalQty, totalValue, whTotals, batchDetails, batchCount: rows.length };
-    }
-    function searchByCodeManual() {
-        document.getElementById('fieldSearchInput').value = '';
-        const query = document.getElementById('codeInput').value;
-        if (!query) return;
-        const q = query.trim().toLowerCase();
-        const matchingRows = rawPhysicalProducts.filter(item => {
-            const itemCode = String(item['ITEM CODE'] || item.itemCode || '').trim().toLowerCase();
-            const batch = String(item['BATCH'] || item.batch || '').trim().toLowerCase();
-            const batchId = String(item['BATCHID'] || item.batchid || '').trim().toLowerCase();
-            return itemCode === q || batch === q || batchId === q;
-        });
-        hideCandidates();
-        if (matchingRows.length > 0) {
-            const targetCode = String(matchingRows[0]['ITEM CODE'] || matchingRows[0].itemCode || '').trim().toLowerCase();
-            const allCodeRows = targetCode ? rawPhysicalProducts.filter(item => String(item['ITEM CODE'] || item.itemCode || '').trim().toLowerCase() === targetCode) : matchingRows;
-            renderSelectedConsolidatedProduct(consolidateItemRows(allCodeRows));
-        } else showNotFound();
-    }
-    function searchByFieldsManual() {
-        document.getElementById('codeInput').value = '';
-        const query = document.getElementById('fieldSearchInput').value;
-        if (!query) return;
-        const tokens = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
-        if (tokens.length === 0) return;
-        const matchingRows = rawPhysicalProducts.filter(item => {
-            const name = String(item['ITEM NAME'] || item.productName || '').toLowerCase();
-            const supplier = String(item['SUPPLIER'] || item.supplier || '').toLowerCase();
-            const category = String(item['CATEGORY'] || item.category || '').toLowerCase();
-            const mainGroup = String(item['MAIN GROUP'] || item.mainGroup || '').toLowerCase();
-            return tokens.every(token => `${name} ${supplier} ${category} ${mainGroup}`.includes(token));
-        });
-        const groupedMap = new Map();
-        matchingRows.forEach(row => {
-            const code = String(row['ITEM CODE'] || row.itemCode || row['ITEM NAME'] || '').trim();
-            if (!groupedMap.has(code)) groupedMap.set(code, []);
-            groupedMap.get(code).push(row);
-        });
-        const consolidatedList = [];
-        groupedMap.forEach(rows => consolidatedList.push(consolidateItemRows(rows)));
-        if (consolidatedList.length === 1) { hideCandidates(); renderSelectedConsolidatedProduct(consolidatedList[0]); }
-        else if (consolidatedList.length > 1) { renderCandidateList(consolidatedList); renderSelectedConsolidatedProduct(consolidatedList[0]); }
-        else { hideCandidates(); showNotFound(); }
-    }
-    function renderCandidateList(candidateList) {
-        const candidateCard = document.getElementById('candidateListCard');
-        document.getElementById('candidateCount').innerText = `Matching Products (${candidateList.length})`;
-        const container = document.getElementById('candidateItemsContainer');
-        container.innerHTML = candidateList.map((item, idx) => `
-            <div onclick="selectCandidate(${idx})" class="p-2 rounded-lg bg-gray-50 border border-gray-200 hover:border-emerald-500 hover:bg-emerald-50/30 transition-colors cursor-pointer flex justify-between items-center gap-2">
-                <div class="truncate"><p class="text-xs font-semibold text-gray-900 truncate">${escapeHtml(item.name)}</p><p class="text-[10px] text-gray-500 font-mono">Code: ${escapeHtml(item.code)} • ${item.batchCount} Batch(es)</p></div>
-                <div class="text-right shrink-0"><span class="text-xs font-bold text-indigo-700 block">${item.totalQty} ${escapeHtml(item.unit)}</span><span class="text-[9px] text-gray-500">Rs. ${formatNumber(item.avgRate)}</span></div>
-            </div>`).join('');
-        window.activeCandidates = candidateList;
-        candidateCard.classList.remove('hidden');
-    }
-    function selectCandidate(index) { if (window.activeCandidates && window.activeCandidates[index]) renderSelectedConsolidatedProduct(window.activeCandidates[index]); }
-    function hideCandidates() { document.getElementById('candidateListCard').classList.add('hidden'); }
-    function showNotFound() { document.getElementById('resultCard').classList.add('hidden'); document.getElementById('notFoundCard').classList.remove('hidden'); }
-    function renderSelectedConsolidatedProduct(item) {
-        const resultCard = document.getElementById('resultCard');
-        const notFoundCard = document.getElementById('notFoundCard');
-        document.getElementById('resName').innerText = item.name;
-        document.getElementById('resCode').innerText = item.code;
-        document.getElementById('resSupplier').innerText = item.supplier;
-        document.getElementById('resCategory').innerText = item.category;
-        document.getElementById('resMainGroup').innerText = item.mainGroup;
-        document.getElementById('resBatchCount').innerText = `${item.batchCount} Batch(es)`;
-        document.getElementById('resRate').innerText = `Rs. ${formatNumber(item.avgRate)}`;
-        document.getElementById('res4WhQty').innerText = `${item.totalQty} ${item.unit}`;
-        document.getElementById('res4WhVal').innerText = `Rs. ${formatNumber(item.totalValue)}`;
-        const grid = document.getElementById('warehouseBreakdownGrid');
-        grid.innerHTML = TARGET_WAREHOUSES.map(w => {
-            const qty = item.whTotals[w.id] || 0, hasStock = qty > 0;
-            return `<div class="p-2.5 rounded-lg border ${hasStock ? 'bg-indigo-50/60 border-indigo-200' : 'bg-gray-50 border-gray-200'}"><span class="text-[9px] uppercase font-semibold text-gray-500 block truncate">${w.name}</span><span class="text-sm font-bold ${hasStock ? 'text-indigo-800' : 'text-gray-400'} block mt-0.5">${qty} <span class="text-[10px] font-normal text-gray-500">${escapeHtml(item.unit)}</span></span></div>`;
-        }).join('');
-        const tbody = document.getElementById('batchTableBody');
-        tbody.innerHTML = item.batchDetails.map(b => `<tr>
-            <td class="font-mono font-bold text-gray-900">${escapeHtml(b.batchName)}</td><td class="tabular-nums font-semibold text-blue-700">Rs. ${formatNumber(b.rate)}</td>
-            <td class="tabular-nums ${b.whs['CITY CENTER WAREHOUSE'] > 0 ? 'font-bold text-gray-900' : 'text-gray-400'}">${b.whs['CITY CENTER WAREHOUSE']}</td>
-            <td class="tabular-nums ${b.whs['Jawalakhel A'] > 0 ? 'font-bold text-gray-900' : 'text-gray-400'}">${b.whs['Jawalakhel A']}</td>
-            <td class="tabular-nums ${b.whs['Jawalakhel B'] > 0 ? 'font-bold text-gray-900' : 'text-gray-400'}">${b.whs['Jawalakhel B']}</td>
-            <td class="tabular-nums ${b.whs['NEW ROAD WAREHOUSE'] > 0 ? 'font-bold text-gray-900' : 'text-gray-400'}">${b.whs['NEW ROAD WAREHOUSE']}</td><td class="tabular-nums font-bold text-indigo-700">${b.rowQty}</td></tr>`).join('');
-        resultCard.classList.remove('hidden'); notFoundCard.classList.add('hidden');
-    }
-    function calculateGlobalStatistics() {
-        const uniqueItemCodes = new Set();
-        let aggregateQty = 0, aggregateValuation = 0;
-        let whAggregates = { 'CITY CENTER WAREHOUSE': 0, 'Jawalakhel A': 0, 'Jawalakhel B': 0, 'NEW ROAD WAREHOUSE': 0 };
-        rawPhysicalProducts.forEach(item => {
-            const code = String(item['ITEM CODE'] || item.itemCode || item['ITEM NAME'] || '').trim();
-            if (code) uniqueItemCodes.add(code);
-            const rate = parseFloat(item['RATE'] || item.rate || 0) || 0;
-            let rowQty = 0;
-            TARGET_WAREHOUSES.forEach(w => { const q = parseFloat(item[w.id] || 0) || 0; whAggregates[w.id] += q; rowQty += q; });
-            aggregateQty += rowQty; aggregateValuation += rowQty * rate;
-        });
-        document.getElementById('statTotalItems').innerText = uniqueItemCodes.size;
-        document.getElementById('statTotalQty').innerText = `${aggregateQty} Pcs`;
-        document.getElementById('statTotalValue').innerText = `Rs. ${formatNumber(aggregateValuation)}`;
-        document.getElementById('statWarehouseGrid').innerHTML = TARGET_WAREHOUSES.map(w => {
-            const qty = whAggregates[w.id], pct = aggregateQty > 0 ? ((qty / aggregateQty) * 100).toFixed(1) : 0;
-            return `<div class="bg-gray-50 p-2 rounded-lg border border-gray-200"><div class="flex justify-between items-center mb-0.5"><span class="text-[9px] text-gray-500 font-semibold truncate">${w.short}</span><span class="text-[8px] px-1 py-0.2 bg-gray-200 text-gray-700 font-mono rounded">${pct}%</span></div><span class="text-xs font-bold text-gray-800 block">${qty} Pcs</span></div>`;
-        }).join('');
-    }
-    let codeDebounce;
-    document.getElementById('codeInput').addEventListener('input', () => { clearTimeout(codeDebounce); codeDebounce = setTimeout(() => searchByCodeManual(), 300); });
-    let fieldDebounce;
-    document.getElementById('fieldSearchInput').addEventListener('input', () => { clearTimeout(fieldDebounce); fieldDebounce = setTimeout(() => searchByFieldsManual(), 400); });
-    window.addEventListener('load', () => {
-        loadCachedData();
-        if (typeof Html5Qrcode === 'undefined') { console.warn('Camera scanner library unavailable; manual search remains available.'); return; }
-        const html5QrCode = new Html5Qrcode("reader");
-        const qrCodeSuccessCallback = decodedText => { document.getElementById('codeInput').value = decodedText; searchByCodeManual(); };
-        const config = { fps: 10, qrbox: { width: 240, height: 140 } };
-        html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback).catch(err => console.warn("Camera scanner offline or permission denied:", err));
-    });
+let rawPhysicalProducts=[];
+// Keep sheet column IDs separate from display names so new warehouses can be added here without changing report logic.
+const TARGET_WAREHOUSES=[
+ {id:'CITY CENTER WAREHOUSE',name:'City Center Warehouse',short:'City Center'},
+ {id:'Jawalakhel A',name:'Apple Store JWL',short:'Apple Store JWL'},
+ {id:'Jawalakhel B',name:'LMC',short:'LMC'},
+ {id:'NEW ROAD WAREHOUSE',name:'New Road Warehouse',short:'New Road'}
+];
+const DEFAULT_WAREHOUSE_KEY='physicalStockDefaultWarehouse';
+let defaultWarehouseId=TARGET_WAREHOUSES[0].id;
+const numberFormat=new Intl.NumberFormat('en-IN',{maximumFractionDigits:2});
+function formatNumber(value){const n=Number(value);return numberFormat.format(Number.isFinite(n)?n:0)}
+function parseQuantity(value){if(typeof value==='number')return Number.isFinite(value)?value:0;const n=parseFloat(String(value??'').replace(/,/g,''));return Number.isFinite(n)?n:0}
+function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function initWarehouseSelector(){const select=document.getElementById('defaultWarehouse');select.innerHTML=TARGET_WAREHOUSES.map(w=>`<option value="${escapeHtml(w.id)}">${escapeHtml(w.name)}</option>`).join('');const saved=localStorage.getItem(DEFAULT_WAREHOUSE_KEY);defaultWarehouseId=TARGET_WAREHOUSES.some(w=>w.id===saved)?saved:TARGET_WAREHOUSES[0].id;select.value=defaultWarehouseId;select.addEventListener('change',()=>{defaultWarehouseId=select.value;localStorage.setItem(DEFAULT_WAREHOUSE_KEY,defaultWarehouseId);refreshWarehouseHighlights()})}
+function refreshWarehouseHighlights(){document.querySelectorAll('[data-warehouse-id]').forEach(el=>{const selected=el.dataset.warehouseId===defaultWarehouseId;el.classList.toggle('warehouse-highlight',selected);el.classList.toggle('warehouse-highlight-label',selected)})}
+function loadCachedData(){const data=localStorage.getItem('inv_scan_products')||localStorage.getItem('physicalStock');const badge=document.getElementById('syncBadge');if(data){try{const parsed=JSON.parse(data);if(Array.isArray(parsed)&&parsed.length){rawPhysicalProducts=parsed;badge.textContent=`${formatNumber(parsed.length)} Batches`;badge.className='text-[9px] bg-emerald-900 text-emerald-200 border border-emerald-700 px-2 py-1 rounded-full font-mono whitespace-nowrap';calculateGlobalStatistics();return}}catch(e){console.error('Failed to parse cached stock data',e)}}badge.textContent='0 Items';badge.className='text-[9px] bg-amber-900 text-amber-200 border border-amber-700 px-2 py-1 rounded-full font-mono whitespace-nowrap'}
+function consolidateItemRows(rows){if(!rows?.length)return null;const p=rows[0],item={name:p['ITEM NAME']||p.productName||'Unnamed Product',code:p['ITEM CODE']||p.itemCode||'N/A',category:p.CATEGORY||p.category||'General',mainGroup:p['MAIN GROUP']||p.mainGroup||'',supplier:p.SUPPLIER||p.supplier||'N/A',unit:p.UNIT||p.unit||'Pcs.',whTotals:{},totalQty:0,totalValue:0,batchDetails:[],batchCount:rows.length};TARGET_WAREHOUSES.forEach(w=>item.whTotals[w.id]=0);rows.forEach(r=>{const rate=parseQuantity(r.RATE??r.rate),whs={};let rowQty=0;TARGET_WAREHOUSES.forEach(w=>{const q=parseQuantity(r[w.id]);whs[w.id]=q;item.whTotals[w.id]+=q;rowQty+=q});item.totalQty+=rowQty;item.totalValue+=rowQty*rate;item.batchDetails.push({batchName:r.BATCH||r.batch||r.BATCHID||r.batchid||'Default Batch',rate,rowQty,whs})});item.avgRate=item.totalQty?item.totalValue/item.totalQty:parseQuantity(p.RATE??p.rate);return item}
+function searchByCodeManual(){document.getElementById('fieldSearchInput').value='';const q=document.getElementById('codeInput').value.trim().toLowerCase();if(!q)return;const matches=rawPhysicalProducts.filter(r=>[r['ITEM CODE']||r.itemCode,r.BATCH||r.batch,r.BATCHID||r.batchid].some(v=>String(v||'').trim().toLowerCase()===q));hideCandidates();if(!matches.length)return showNotFound();const code=String(matches[0]['ITEM CODE']||matches[0].itemCode||'').trim().toLowerCase();const rows=code?rawPhysicalProducts.filter(r=>String(r['ITEM CODE']||r.itemCode||'').trim().toLowerCase()===code):matches;renderSelectedConsolidatedProduct(consolidateItemRows(rows))}
+function searchByFieldsManual(){document.getElementById('codeInput').value='';const q=document.getElementById('fieldSearchInput').value;if(!q.trim())return;const tokens=q.toLowerCase().trim().split(/\s+/);const matches=rawPhysicalProducts.filter(r=>{const text=[r['ITEM NAME']||r.productName,r.SUPPLIER||r.supplier,r.CATEGORY||r.category,r['MAIN GROUP']||r.mainGroup].join(' ').toLowerCase();return tokens.every(t=>text.includes(t))});const groups=new Map();matches.forEach(r=>{const code=String(r['ITEM CODE']||r.itemCode||r['ITEM NAME']||'').trim();if(!groups.has(code))groups.set(code,[]);groups.get(code).push(r)});const list=[...groups.values()].map(consolidateItemRows);if(!list.length){hideCandidates();showNotFound()}else if(list.length===1){hideCandidates();renderSelectedConsolidatedProduct(list[0])}else{renderCandidateList(list);renderSelectedConsolidatedProduct(list[0])}}
+function renderCandidateList(list){document.getElementById('candidateCount').textContent=`Matching Products (${formatNumber(list.length)})`;document.getElementById('candidateItemsContainer').innerHTML=list.map((item,i)=>`<button onclick="selectCandidate(${i})" class="w-full text-left p-2 rounded-lg bg-gray-50 border flex justify-between gap-2"><span class="min-w-0"><span class="block text-xs font-semibold truncate">${escapeHtml(item.name)}</span><span class="text-[10px] text-gray-500">${escapeHtml(item.code)} · ${formatNumber(item.batchCount)} batches</span></span><span class="text-right shrink-0 text-xs font-bold">${formatNumber(item.totalQty)} ${escapeHtml(item.unit)}<span class="block text-[9px] text-gray-500">Rs. ${formatNumber(item.avgRate)}</span></span></button>`).join('');window.activeCandidates=list;document.getElementById('candidateListCard').classList.remove('hidden')}
+function selectCandidate(i){if(window.activeCandidates?.[i])renderSelectedConsolidatedProduct(window.activeCandidates[i])}
+function hideCandidates(){document.getElementById('candidateListCard').classList.add('hidden')}
+function showNotFound(){document.getElementById('resultCard').classList.add('hidden');document.getElementById('notFoundCard').classList.remove('hidden')}
+function renderSelectedConsolidatedProduct(item){if(!item)return;[['resName',item.name],['resCode',item.code],['resSupplier',item.supplier],['resCategory',item.category],['resMainGroup',item.mainGroup],['resBatchCount',`${formatNumber(item.batchCount)} Batch(es)`],['resRate',`Rs. ${formatNumber(item.avgRate)}`],['res4WhQty',`${formatNumber(item.totalQty)} ${item.unit}`],['res4WhVal',`Rs. ${formatNumber(item.totalValue)}`]].forEach(([id,value])=>document.getElementById(id).textContent=value);document.getElementById('warehouseBreakdownGrid').innerHTML=TARGET_WAREHOUSES.map(w=>`<div data-warehouse-id="${escapeHtml(w.id)}" class="p-2.5 rounded-lg border bg-gray-50"><span class="text-[9px] uppercase text-gray-500 block truncate">${escapeHtml(w.name)}</span><b class="text-sm block mt-0.5">${formatNumber(item.whTotals[w.id])} <small class="font-normal text-gray-500">${escapeHtml(item.unit)}</small></b></div>`).join('');document.getElementById('batchTableBody').innerHTML=item.batchDetails.map(b=>`<tr><td class="font-mono font-bold">${escapeHtml(b.batchName)}</td><td class="tabular-nums">Rs. ${formatNumber(b.rate)}</td>${TARGET_WAREHOUSES.map(w=>`<td data-warehouse-id="${escapeHtml(w.id)}" class="tabular-nums ${b.whs[w.id]>0?'font-bold':''}">${formatNumber(b.whs[w.id])}</td>`).join('')}<td class="tabular-nums font-bold text-indigo-700">${formatNumber(b.rowQty)}</td></tr>`).join('');document.getElementById('resultCard').classList.remove('hidden');document.getElementById('notFoundCard').classList.add('hidden');refreshWarehouseHighlights()}
+function calculateGlobalStatistics(){const codes=new Set();let qty=0,value=0;const totals=Object.fromEntries(TARGET_WAREHOUSES.map(w=>[w.id,0]));rawPhysicalProducts.forEach(r=>{const code=String(r['ITEM CODE']||r.itemCode||r['ITEM NAME']||'').trim();if(code)codes.add(code);const rate=parseQuantity(r.RATE??r.rate);TARGET_WAREHOUSES.forEach(w=>{const q=parseQuantity(r[w.id]);totals[w.id]+=q;qty+=q;value+=q*rate})});document.getElementById('statTotalItems').textContent=formatNumber(codes.size);document.getElementById('statTotalQty').textContent=`${formatNumber(qty)} Pcs`;document.getElementById('statTotalValue').textContent=`Rs. ${formatNumber(value)}`;document.getElementById('statWarehouseGrid').innerHTML=TARGET_WAREHOUSES.map(w=>{const pct=qty?((totals[w.id]/qty)*100).toFixed(1):'0.0';return `<div data-warehouse-id="${escapeHtml(w.id)}" class="bg-gray-50 p-2 rounded-lg border"><div class="flex justify-between gap-1 text-[9px]"><span class="text-gray-500 font-semibold truncate">${escapeHtml(w.short)}</span><span>${pct}%</span></div><b class="text-xs block mt-1">${formatNumber(totals[w.id])} Pcs</b></div>`}).join('');refreshWarehouseHighlights()}
+let codeDebounce,fieldDebounce;document.getElementById('codeInput').addEventListener('input',()=>{clearTimeout(codeDebounce);codeDebounce=setTimeout(searchByCodeManual,300)});document.getElementById('fieldSearchInput').addEventListener('input',()=>{clearTimeout(fieldDebounce);fieldDebounce=setTimeout(searchByFieldsManual,400)});
+window.addEventListener('load',()=>{initWarehouseSelector();loadCachedData();if(typeof Html5Qrcode==='undefined'){console.warn('Scanner unavailable; use manual search.');return}const scanner=new Html5Qrcode('reader');scanner.start({facingMode:'environment'},{fps:10,qrbox:{width:240,height:140}},text=>{document.getElementById('codeInput').value=text;searchByCodeManual()}).catch(err=>console.warn('Camera scanner offline or permission denied:',err))});
 </script>
 </body>
 </html>
