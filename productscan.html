@@ -79,144 +79,207 @@ function calculateGlobalStatistics(){const codes=new Set();let qty=0,value=0;con
 
 /* =========================================================
    SCANNER — BARCODE + QR
-   High resolution + full-frame decoding = normal distance
+   Smart camera selection + Zoom + Continuous AF for 1-ft scanning
    ========================================================= */
-let qrScanner=null;
-let scanLockUntil=0;              // debounce so one barcode = one scan
-const SCAN_COOLDOWN_MS=1200;
+let qrScanner = null;
+let scanLockUntil = 0;
+const SCAN_COOLDOWN_MS = 1200;
 
-function getSupportedScanFormats(){
-  const F=window.Html5QrcodeSupportedFormats;
-  if(!F) return undefined;        // let the library use all formats
-  const wanted=['QR_CODE','DATA_MATRIX','AZTEC','PDF_417',
-    'CODE_128','CODE_39','CODE_93','ITF','CODABAR',
-    'EAN_13','EAN_8','UPC_A','UPC_E','UPC_EAN_EXTENSION'];
-  return wanted.map(n=>F[n]).filter(v=>v!==undefined);
+function getSupportedScanFormats() {
+  const F = window.Html5QrcodeSupportedFormats;
+  if (!F) return undefined;
+  const wanted = ['QR_CODE', 'DATA_MATRIX', 'AZTEC', 'PDF_417',
+    'CODE_128', 'CODE_39', 'CODE_93', 'ITF', 'CODABAR',
+    'EAN_13', 'EAN_8', 'UPC_A', 'UPC_E', 'UPC_EAN_EXTENSION'];
+  return wanted.map(n => F[n]).filter(v => v !== undefined);
 }
 
-function setScanStatus(msg,kind){
-  const el=document.getElementById('scanStatus');
-  if(!el) return;
-  el.textContent=msg;
-  el.className='text-[9px] text-center pt-1 '+(kind==='warn'?'text-amber-600 font-semibold':'text-gray-500');
+function setScanStatus(msg, kind) {
+  const el = document.getElementById('scanStatus');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'text-[9px] text-center pt-1 ' + (kind === 'warn' ? 'text-amber-600 font-semibold' : 'text-gray-500');
 }
 
-// GREEN BLINK on successful decode
-function flashScanSuccess(){
-  const flash=document.getElementById('scanFlash');
-  const card=document.getElementById('scanCard');
-  if(flash){
+function flashScanSuccess() {
+  const flash = document.getElementById('scanFlash');
+  const card = document.getElementById('scanCard');
+  if (flash) {
     flash.classList.remove('flash');
-    void flash.offsetWidth;       // force reflow so the animation restarts
+    void flash.offsetWidth;
     flash.classList.add('flash');
-    setTimeout(()=>flash.classList.remove('flash'),900);
+    setTimeout(() => flash.classList.remove('flash'), 900);
   }
-  if(card){
+  if (card) {
     card.classList.remove('scan-card-success');
     void card.offsetWidth;
     card.classList.add('scan-card-success');
-    setTimeout(()=>card.classList.remove('scan-card-success'),900);
+    setTimeout(() => card.classList.remove('scan-card-success'), 900);
   }
-  if(navigator.vibrate){try{navigator.vibrate(60)}catch(e){}}
+  if (navigator.vibrate) { try { navigator.vibrate(60); } catch (e) {} }
 }
 
-function handleScanSuccess(decodedText){
-  const now=Date.now();
-  if(now<scanLockUntil) return;          // ignore repeat frames of same code
-  scanLockUntil=now+SCAN_COOLDOWN_MS;
+function handleScanSuccess(decodedText) {
+  const now = Date.now();
+  if (now < scanLockUntil) return;
+  scanLockUntil = now + SCAN_COOLDOWN_MS;
 
-  const code=String(decodedText||'').trim();
-  if(!code) return;
+  const code = String(decodedText || '').trim();
+  if (!code) return;
 
-  flashScanSuccess();                    // 👈 green blink feedback
-
-  document.getElementById('codeInput').value=code;
-  document.getElementById('fieldSearchInput').value='';
+  flashScanSuccess();
+  document.getElementById('codeInput').value = code;
+  document.getElementById('fieldSearchInput').value = '';
   searchByCodeManual();
   setScanStatus(`Scanned: ${code}`);
 }
 
-function handleScanFailure(){/* called every frame with no code – keep silent */}
+function handleScanFailure() { /* silent */ }
 
-// Push the running camera to its highest useful resolution + continuous AF.
-async function upgradeCameraQuality(scanner){
-  try{
-    await new Promise(r=>setTimeout(r,300));   // let the stream settle
-    const settings = typeof scanner.getRunningTrackSettings==='function'
-      ? scanner.getRunningTrackSettings() : null;
-    console.log('Camera track settings:', settings);
+/**
+ * Enumerate cameras and pick the best rear-facing one.
+ * The primary rear camera is usually the one with the largest max resolution
+ * and a label indicating "0" or "camera2 0" on Android.
+ */
+async function selectBestRearCamera() {
+  try {
+    const devices = await Html5Qrcode.getCameras();
+    if (!devices || !devices.length) return null;
 
-    // Already high-res? nothing to do.
-    if(settings && settings.width && settings.width >= 1280) return;
+    // Filter to rear-facing cameras
+    const rearCameras = devices.filter(d =>
+      d.label.toLowerCase().includes('back') ||
+      d.label.toLowerCase().includes('rear') ||
+      d.label.toLowerCase().includes('environment')
+    );
+    if (!rearCameras.length) return devices[0].id; // fallback
 
-    const caps = typeof scanner.getRunningTrackCapabilities==='function'
-      ? scanner.getRunningTrackCapabilities() : null;
-
-    const desired={
-      width:{ ideal: caps && caps.width && caps.width.max ? Math.min(caps.width.max,1920) : 1920 },
-      height:{ ideal: caps && caps.height && caps.height.max ? Math.min(caps.height.max,1080) : 1080 }
-    };
-    if(caps && Array.isArray(caps.focusMode) && caps.focusMode.includes('continuous')){
-      desired.advanced=[{focusMode:'continuous'}];   // continuous autofocus when supported
+    // Prefer a camera labeled with "0" (primary sensor on many Android phones)
+    const primary = rearCameras.find(d => d.label.includes('camera2 0') || d.label.includes('back 0'));
+    if (primary) {
+      console.log('Selected primary rear camera:', primary.label);
+      return primary.id;
     }
-    await scanner.applyVideoConstraints(desired);
-    console.log('Camera track settings after upgrade:',
-      typeof scanner.getRunningTrackSettings==='function' ? scanner.getRunningTrackSettings() : null);
-  }catch(err){
-    console.warn('Camera quality upgrade skipped:', err);
+
+    // Otherwise, pick the first rear camera in the list
+    console.log('Selected rear camera (fallback):', rearCameras[0].label);
+    return rearCameras[0].id;
+  } catch (err) {
+    console.warn('Camera enumeration failed:', err);
+    return null; // fall back to facingMode
   }
 }
 
-function startScanner(){
-  if(typeof Html5Qrcode==='undefined'){
-    setScanStatus('Scanner library unavailable — use manual search.','warn');
-    return;
+/**
+ * After the scanner starts, try to apply a 2x zoom and ensure continuous AF.
+ * This is the key to scanning from a comfortable 1-foot distance.
+ */
+async function applyZoomAndFocus(scanner) {
+  try {
+    await new Promise(r => setTimeout(r, 400)); // let the stream settle
+    const caps = typeof scanner.getRunningTrackCapabilities === 'function'
+      ? scanner.getRunningTrackCapabilities() : null;
+
+    const constraints = {};
+
+    // 1. Apply zoom if the camera supports it
+    if (caps && caps.zoom) {
+      const desiredZoom = Math.min(caps.zoom.max || 2, 2); // Use 2x, but cap at max
+      if (desiredZoom > (caps.zoom.min || 1)) {
+        constraints.zoom = desiredZoom;
+        console.log(`Applying zoom: ${desiredZoom}x (range: ${caps.zoom.min}-${caps.zoom.max})`);
+      }
+    }
+
+    // 2. Ensure continuous autofocus (some browsers ignore it in initial constraints)
+    if (caps && Array.isArray(caps.focusMode) && caps.focusMode.includes('continuous')) {
+      constraints.focusMode = 'continuous';
+    }
+
+    // 3. Apply the constraints
+    if (Object.keys(constraints).length > 0) {
+      await scanner.applyVideoConstraints(constraints);
+      console.log('Camera constraints applied:', constraints);
+    }
+  } catch (err) {
+    console.warn('Could not apply zoom/focus constraints:', err);
   }
-  try{
-    qrScanner=new Html5Qrcode('reader',{
-      formatsToSupport:getSupportedScanFormats(),
-      // Native detector = very fast on Android; silently falls back to ZXing on iOS
-      experimentalFeatures:{ useBarCodeDetectorIfSupported:true },
-      verbose:false
-    });
-  }catch(err){
-    console.warn('Scanner init failed:',err);
-    setScanStatus('Scanner unavailable — use manual search.','warn');
+}
+
+async function startScanner() {
+  if (typeof Html5Qrcode === 'undefined') {
+    setScanStatus('Scanner library unavailable — use manual search.', 'warn');
     return;
   }
 
-  const scanConfig={
-    fps:24,                                  // more decode attempts per second
-    // Scan the FULL frame (this is what lets barcodes read from a distance).
-    // html5-qrcode crops decoding to qrbox, so make it as large as the viewfinder.
-    qrbox:(vw,vh)=>({
-      width:Math.max(1,Math.floor(vw)),
-      height:Math.max(1,Math.floor(vh))
+  try {
+    qrScanner = new Html5Qrcode('reader', {
+      formatsToSupport: getSupportedScanFormats(),
+      experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+      verbose: false
+    });
+  } catch (err) {
+    console.warn('Scanner init failed:', err);
+    setScanStatus('Scanner unavailable — use manual search.', 'warn');
+    return;
+  }
+
+  // --- 1. Smart Camera Selection ---
+  const bestCameraId = await selectBestRearCamera();
+  const cameraSource = bestCameraId ? { deviceId: { exact: bestCameraId } } : { facingMode: 'environment' };
+
+  const scanConfig = {
+    fps: 30, // High frame rate for fast decoding
+    // Full-frame decoding so distant barcodes are analyzed
+    qrbox: (vw, vh) => ({
+      width: Math.max(1, Math.floor(vw)),
+      height: Math.max(1, Math.floor(vh))
     }),
-    disableFlip:true,                        // barcodes never need a mirrored pass
-    videoConstraints:{
-      facingMode:{ ideal:'environment' },
-      width:{ ideal:1920, min:1280 },        // ← the key fix for scan distance
-      height:{ ideal:1080, min:720 },
-      frameRate:{ ideal:30, min:15 }
+    disableFlip: true,
+    // --- 2. Optimized Resolution & Autofocus ---
+    videoConstraints: {
+      facingMode: { ideal: 'environment' },
+      width: { ideal: 1280 },   // 720p focuses faster on many phones
+      height: { ideal: 720 },
+      frameRate: { ideal: 30, min: 15 },
+      focusMode: { ideal: 'continuous' } // Direct constraint, not advanced
     }
   };
 
-  qrScanner.start({facingMode:'environment'},scanConfig,handleScanSuccess,handleScanFailure)
-    .then(async ()=>{
+  qrScanner.start(cameraSource, scanConfig, handleScanSuccess, handleScanFailure)
+    .then(async () => {
       setScanStatus('Scan anywhere in frame — barcode or QR code.');
-      await upgradeCameraQuality(qrScanner); // fallback for browsers that ignore videoConstraints
+      // --- 3. Apply Zoom & Ensure Focus After Start ---
+      await applyZoomAndFocus(qrScanner);
     })
-    .catch(err=>{
-      console.warn('Camera scanner offline or permission denied:',err);
-      setScanStatus('Camera unavailable — use manual search.','warn');
+    .catch(err => {
+      console.warn('Camera scanner offline or permission denied:', err);
+      // If deviceId failed, retry with generic facingMode as a last resort
+      if (bestCameraId) {
+        setScanStatus('Retrying with default camera…', 'warn');
+        qrScanner.start({ facingMode: 'environment' }, scanConfig, handleScanSuccess, handleScanFailure)
+          .then(() => applyZoomAndFocus(qrScanner))
+          .catch(e => setScanStatus('Camera unavailable — use manual search.', 'warn'));
+      } else {
+        setScanStatus('Camera unavailable — use manual search.', 'warn');
+      }
     });
 }
 
-let codeDebounce,fieldDebounce;
-document.getElementById('codeInput').addEventListener('input',()=>{clearTimeout(codeDebounce);codeDebounce=setTimeout(searchByCodeManual,300)});
-document.getElementById('fieldSearchInput').addEventListener('input',()=>{clearTimeout(fieldDebounce);fieldDebounce=setTimeout(searchByFieldsManual,400)});
-window.addEventListener('load',()=>{initWarehouseSelector();loadCachedData();startScanner()});
+let codeDebounce, fieldDebounce;
+document.getElementById('codeInput').addEventListener('input', () => {
+  clearTimeout(codeDebounce);
+  codeDebounce = setTimeout(searchByCodeManual, 300);
+});
+document.getElementById('fieldSearchInput').addEventListener('input', () => {
+  clearTimeout(fieldDebounce);
+  fieldDebounce = setTimeout(searchByFieldsManual, 400);
+});
+window.addEventListener('load', () => {
+  initWarehouseSelector();
+  loadCachedData();
+  startScanner();
+});
 </script>
 </body>
 </html>
