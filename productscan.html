@@ -16,7 +16,6 @@ body{background:#f0f2f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'
 #scanFlash.flash .scan-flash-check{animation:scanFlashPop .85s ease-out 1}
 @keyframes scanFlashFade{0%{opacity:0}10%{opacity:1}70%{opacity:.85}100%{opacity:0}}
 @keyframes scanFlashPop{0%{transform:scale(.4);opacity:0}25%{transform:scale(1.15);opacity:1}60%{transform:scale(1);opacity:1}100%{transform:scale(1);opacity:0}}
-/* Optional green blink on the whole camera card */
 .scan-card-success{animation:scanCardPulse .85s ease-out 1}
 @keyframes scanCardPulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.0)}20%{box-shadow:0 0 0 4px rgba(34,197,94,.55)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
 
@@ -79,16 +78,16 @@ function renderSelectedConsolidatedProduct(item){if(!item)return;[['resName',ite
 function calculateGlobalStatistics(){const codes=new Set();let qty=0,value=0;const totals=Object.fromEntries(TARGET_WAREHOUSES.map(w=>[w.id,0]));rawPhysicalProducts.forEach(r=>{const code=String(r['ITEM CODE']||r.itemCode||r['ITEM NAME']||'').trim();if(code)codes.add(code);const rate=parseQuantity(r.RATE??r.rate);TARGET_WAREHOUSES.forEach(w=>{const q=parseQuantity(r[w.id]);totals[w.id]+=q;qty+=q;value+=q*rate})});document.getElementById('statTotalItems').textContent=formatNumber(codes.size);document.getElementById('statTotalQty').textContent=`${formatNumber(qty)} Pcs`;document.getElementById('statTotalValue').textContent=`Rs. ${formatNumber(value)}`;document.getElementById('statWarehouseGrid').innerHTML=TARGET_WAREHOUSES.map(w=>{const pct=qty?((totals[w.id]/qty)*100).toFixed(1):'0.0';return `<div data-warehouse-id="${escapeHtml(w.id)}" class="bg-gray-50 p-2 rounded-lg border"><div class="flex justify-between gap-1 text-[9px]"><span class="text-gray-500 font-semibold truncate">${escapeHtml(w.short)}</span><span>${pct}%</span></div><b class="text-xs block mt-1">${formatNumber(totals[w.id])} Pcs</b></div>`}).join('');refreshWarehouseHighlights()}
 
 /* =========================================================
-   SCANNER (BARCODE + QR) WITH GREEN SUCCESS BLINK
+   SCANNER — BARCODE + QR
+   High resolution + full-frame decoding = normal distance
    ========================================================= */
 let qrScanner=null;
 let scanLockUntil=0;              // debounce so one barcode = one scan
-const SCAN_COOLDOWN_MS=1500;
+const SCAN_COOLDOWN_MS=1200;
 
-// All the formats a "barcode" could be. QR is kept for existing labels.
 function getSupportedScanFormats(){
   const F=window.Html5QrcodeSupportedFormats;
-  if(!F) return undefined; // let the library default (all formats)
+  if(!F) return undefined;        // let the library use all formats
   const wanted=['QR_CODE','DATA_MATRIX','AZTEC','PDF_417',
     'CODE_128','CODE_39','CODE_93','ITF','CODABAR',
     'EAN_13','EAN_8','UPC_A','UPC_E','UPC_EAN_EXTENSION'];
@@ -123,7 +122,7 @@ function flashScanSuccess(){
 
 function handleScanSuccess(decodedText){
   const now=Date.now();
-  if(now<scanLockUntil) return;          // ignore repeat frames of the same code
+  if(now<scanLockUntil) return;          // ignore repeat frames of same code
   scanLockUntil=now+SCAN_COOLDOWN_MS;
 
   const code=String(decodedText||'').trim();
@@ -134,10 +133,39 @@ function handleScanSuccess(decodedText){
   document.getElementById('codeInput').value=code;
   document.getElementById('fieldSearchInput').value='';
   searchByCodeManual();
-  setScanStatus(`Scanned: ${code}`,'ok');
+  setScanStatus(`Scanned: ${code}`);
 }
 
 function handleScanFailure(){/* called every frame with no code – keep silent */}
+
+// Push the running camera to its highest useful resolution + continuous AF.
+async function upgradeCameraQuality(scanner){
+  try{
+    await new Promise(r=>setTimeout(r,300));   // let the stream settle
+    const settings = typeof scanner.getRunningTrackSettings==='function'
+      ? scanner.getRunningTrackSettings() : null;
+    console.log('Camera track settings:', settings);
+
+    // Already high-res? nothing to do.
+    if(settings && settings.width && settings.width >= 1280) return;
+
+    const caps = typeof scanner.getRunningTrackCapabilities==='function'
+      ? scanner.getRunningTrackCapabilities() : null;
+
+    const desired={
+      width:{ ideal: caps && caps.width && caps.width.max ? Math.min(caps.width.max,1920) : 1920 },
+      height:{ ideal: caps && caps.height && caps.height.max ? Math.min(caps.height.max,1080) : 1080 }
+    };
+    if(caps && Array.isArray(caps.focusMode) && caps.focusMode.includes('continuous')){
+      desired.advanced=[{focusMode:'continuous'}];   // continuous autofocus when supported
+    }
+    await scanner.applyVideoConstraints(desired);
+    console.log('Camera track settings after upgrade:',
+      typeof scanner.getRunningTrackSettings==='function' ? scanner.getRunningTrackSettings() : null);
+  }catch(err){
+    console.warn('Camera quality upgrade skipped:', err);
+  }
+}
 
 function startScanner(){
   if(typeof Html5Qrcode==='undefined'){
@@ -147,8 +175,8 @@ function startScanner(){
   try{
     qrScanner=new Html5Qrcode('reader',{
       formatsToSupport:getSupportedScanFormats(),
-      // Use the JS decoder so *every* barcode format above works on all browsers
-      experimentalFeatures:{useBarCodeDetectorIfSupported:false},
+      // Native detector = very fast on Android; silently falls back to ZXing on iOS
+      experimentalFeatures:{ useBarCodeDetectorIfSupported:true },
       verbose:false
     });
   }catch(err){
@@ -158,19 +186,27 @@ function startScanner(){
   }
 
   const scanConfig={
-    fps:10,
-    // Wide, barcode-friendly scan window (barcodes are long & thin)
-    qrbox:(vw,vh)=>{
-      const width=Math.floor(vw*0.92);
-      const height=Math.floor(Math.min(vh*0.62,220));
-      return {width,height};
-    },
-    aspectRatio:1.7777778,
-    disableFlip:false
+    fps:24,                                  // more decode attempts per second
+    // Scan the FULL frame (this is what lets barcodes read from a distance).
+    // html5-qrcode crops decoding to qrbox, so make it as large as the viewfinder.
+    qrbox:(vw,vh)=>({
+      width:Math.max(1,Math.floor(vw)),
+      height:Math.max(1,Math.floor(vh))
+    }),
+    disableFlip:true,                        // barcodes never need a mirrored pass
+    videoConstraints:{
+      facingMode:{ ideal:'environment' },
+      width:{ ideal:1920, min:1280 },        // ← the key fix for scan distance
+      height:{ ideal:1080, min:720 },
+      frameRate:{ ideal:30, min:15 }
+    }
   };
 
   qrScanner.start({facingMode:'environment'},scanConfig,handleScanSuccess,handleScanFailure)
-    .then(()=>setScanStatus('Point the camera at a barcode or QR code.'))
+    .then(async ()=>{
+      setScanStatus('Scan anywhere in frame — barcode or QR code.');
+      await upgradeCameraQuality(qrScanner); // fallback for browsers that ignore videoConstraints
+    })
     .catch(err=>{
       console.warn('Camera scanner offline or permission denied:',err);
       setScanStatus('Camera unavailable — use manual search.','warn');
