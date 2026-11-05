@@ -7,7 +7,20 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <style>
-body{background:#f0f2f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif}.app-shell{width:100%;max-width:540px;margin:0 auto;display:flex;flex-direction:column;min-height:100vh;position:relative}main{padding:10px 12px calc(84px + max(env(safe-area-inset-bottom),20px))}.dense-table{font-size:11px;border-collapse:collapse;width:100%}.dense-table th{font-size:10px;text-transform:uppercase;letter-spacing:.04em;padding:5px 6px;background:#374151;color:#fff;font-weight:700;text-align:left}.dense-table td{padding:5px 6px;border-bottom:1px solid #e5e7eb;vertical-align:middle}.dense-table tr:hover td{background:#f9fafb}.product-name{font-size:11px;color:#111827;font-weight:500;line-height:1.3}.warehouse-highlight{background:#eef2ff!important;border-color:#4f46e5!important;box-shadow:0 0 0 2px rgba(79,70,229,.18)}.warehouse-highlight-label{color:#3730a3!important;font-weight:800!important}#reader{max-height:300px}#reader video{max-height:250px;border-radius:8px;object-fit:cover}#reader__dashboard{padding:2px!important;margin:0!important}#reader__dashboard_section,#reader__dashboard_section_csr{margin:0!important;padding:2px 4px!important;min-height:0!important}#reader__header_message{display:none!important}#reader__scan_region{min-height:0!important;max-height:260px;padding:0!important}#reader__scan_region video{max-height:250px!important;object-fit:cover!important}#reader button,#reader select{font-size:11px!important;padding:4px 7px!important;min-height:30px!important}@media(min-width:1024px){body{padding:24px}.app-shell{max-width:1280px}header{border-radius:20px 20px 0 0;overflow:hidden}main{padding:16px 20px calc(112px + max(env(safe-area-inset-bottom),20px))}.dense-table{font-size:12px}.dense-table th,.dense-table td{padding:7px 8px}}
+body{background:#f0f2f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif}.app-shell{width:100%;max-width:540px;margin:0 auto;display:flex;flex-direction:column;min-height:100vh;position:relative}main{padding:10px 12px calc(84px + max(env(safe-area-inset-bottom),20px))}.dense-table{font-size:11px;border-collapse:collapse;width:100%}.dense-table th{font-size:10px;text-transform:uppercase;letter-spacing:.04em;padding:5px 6px;background:#374151;color:#fff;font-weight:700;text-align:left}.dense-table td{padding:5px 6px;border-bottom:1px solid #e5e7eb;vertical-align:middle}.dense-table tr:hover td{background:#f9fafb}.product-name{font-size:11px;color:#111827;font-weight:500;line-height:1.3}.warehouse-highlight{background:#eef2ff!important;border-color:#4f46e5!important;box-shadow:0 0 0 2px rgba(79,70,229,.18)}.warehouse-highlight-label{color:#3730a3!important;font-weight:800!important}#reader{max-height:300px}#reader video{max-height:250px;border-radius:8px;object-fit:cover}#reader__dashboard{padding:2px!important;margin:0!important}#reader__dashboard_section,#reader__dashboard_section_csr{margin:0!important;padding:2px 4px!important;min-height:0!important}#reader__header_message{display:none!important}#reader__scan_region{min-height:0!important;max-height:260px;padding:0!important}#reader__scan_region video{max-height:250px!important;object-fit:cover!important}#reader button,#reader select{font-size:11px!important;padding:4px 7px!important;min-height:30px!important}
+
+/* ---- GREEN SUCCESS BLINK (scan feedback) ---- */
+#scanFlash{position:absolute;inset:0;border-radius:8px;pointer-events:none;opacity:0;display:flex;align-items:center;justify-content:center;border:3px solid #22c55e;background:rgba(34,197,94,.30);box-shadow:inset 0 0 45px rgba(34,197,94,.70),0 0 24px rgba(34,197,94,.55)}
+#scanFlash .scan-flash-check{font-size:40px;line-height:1;font-weight:900;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.45);transform:scale(.6);opacity:0}
+#scanFlash.flash{animation:scanFlashFade .85s ease-out 1}
+#scanFlash.flash .scan-flash-check{animation:scanFlashPop .85s ease-out 1}
+@keyframes scanFlashFade{0%{opacity:0}10%{opacity:1}70%{opacity:.85}100%{opacity:0}}
+@keyframes scanFlashPop{0%{transform:scale(.4);opacity:0}25%{transform:scale(1.15);opacity:1}60%{transform:scale(1);opacity:1}100%{transform:scale(1);opacity:0}}
+/* Optional green blink on the whole camera card */
+.scan-card-success{animation:scanCardPulse .85s ease-out 1}
+@keyframes scanCardPulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.0)}20%{box-shadow:0 0 0 4px rgba(34,197,94,.55)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+
+@media(min-width:1024px){body{padding:24px}.app-shell{max-width:1280px}header{border-radius:20px 20px 0 0;overflow:hidden}main{padding:16px 20px calc(112px + max(env(safe-area-inset-bottom),20px))}.dense-table{font-size:12px}.dense-table th,.dense-table td{padding:7px 8px}}
 </style>
 </head>
 <body>
@@ -18,7 +31,15 @@ body{background:#f0f2f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'
  <div id="syncBadge" class="text-[9px] bg-gray-800 text-gray-300 border border-gray-700 px-2 py-1 rounded-full font-mono whitespace-nowrap">Checking…</div>
 </header>
 <main class="space-y-3">
- <div class="bg-gray-100 border border-gray-300 rounded-xl p-1.5 shadow-inner"><div id="reader" class="w-full bg-black rounded-lg overflow-hidden"></div></div>
+ <!-- CAMERA / SCANNER -->
+ <div id="scanCard" class="bg-gray-100 border border-gray-300 rounded-xl p-1.5 shadow-inner">
+  <div class="relative">
+   <div id="reader" class="w-full bg-black rounded-lg overflow-hidden"></div>
+   <div id="scanFlash" aria-hidden="true"><span class="scan-flash-check">✓</span></div>
+  </div>
+  <div id="scanStatus" class="text-[9px] text-center text-gray-500 pt-1">Starting camera…</div>
+ </div>
+
  <section class="bg-white border border-gray-200 rounded-xl p-3 space-y-2 shadow-sm"><label for="codeInput" class="text-[10px] font-bold uppercase tracking-wider text-indigo-700 block">🏷️ Item Code Search (All Batches)</label><div class="flex gap-2"><input type="text" id="codeInput" placeholder="Enter exact Item Code (e.g. 111.1)…" class="min-w-0 flex-1 px-3 py-2 text-xs bg-gray-50 border border-gray-300 rounded-lg outline-none focus:border-indigo-600 font-mono"><button onclick="searchByCodeManual()" class="px-3 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg shrink-0">Inspect Code</button></div></section>
  <section class="bg-white border border-gray-200 rounded-xl p-3 space-y-2 shadow-sm"><label for="fieldSearchInput" class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">🔍 Description Search (Order-Independent)</label><div class="flex gap-2"><input type="text" id="fieldSearchInput" placeholder="e.g. cable c to c or apple c to c" class="min-w-0 flex-1 px-3 py-2 text-xs bg-gray-50 border border-gray-300 rounded-lg outline-none focus:border-emerald-600"><button onclick="searchByFieldsManual()" class="px-3 py-2 bg-emerald-600 text-white text-xs font-semibold rounded-lg shrink-0">Search</button></div></section>
  <div id="candidateListCard" class="hidden bg-white border border-gray-200 rounded-xl p-3 space-y-2 shadow-md"><div class="flex justify-between items-center border-b pb-2"><span id="candidateCount" class="text-[11px] font-bold">Matching Products</span><span class="text-[9px] text-gray-500">Tap to inspect</span></div><div id="candidateItemsContainer" class="max-h-56 overflow-y-auto space-y-1.5"></div></div>
@@ -56,8 +77,110 @@ function hideCandidates(){document.getElementById('candidateListCard').classList
 function showNotFound(){document.getElementById('resultCard').classList.add('hidden');document.getElementById('notFoundCard').classList.remove('hidden')}
 function renderSelectedConsolidatedProduct(item){if(!item)return;[['resName',item.name],['resCode',item.code],['resSupplier',item.supplier],['resCategory',item.category],['resMainGroup',item.mainGroup],['resBatchCount',`${formatNumber(item.batchCount)} Batch(es)`],['resRate',`Rs. ${formatNumber(item.avgRate)}`],['res4WhQty',`${formatNumber(item.totalQty)} ${item.unit}`],['res4WhVal',`Rs. ${formatNumber(item.totalValue)}`]].forEach(([id,value])=>document.getElementById(id).textContent=value);document.getElementById('warehouseBreakdownGrid').innerHTML=TARGET_WAREHOUSES.map(w=>`<div data-warehouse-id="${escapeHtml(w.id)}" class="p-2.5 rounded-lg border bg-gray-50"><span class="text-[9px] uppercase text-gray-500 block truncate">${escapeHtml(w.name)}</span><b class="text-sm block mt-0.5">${formatNumber(item.whTotals[w.id])} <small class="font-normal text-gray-500">${escapeHtml(item.unit)}</small></b></div>`).join('');document.getElementById('batchTableBody').innerHTML=item.batchDetails.map(b=>`<tr><td class="font-mono font-bold">${escapeHtml(b.batchName)}</td><td class="tabular-nums">Rs. ${formatNumber(b.rate)}</td>${TARGET_WAREHOUSES.map(w=>`<td data-warehouse-id="${escapeHtml(w.id)}" class="tabular-nums ${b.whs[w.id]>0?'font-bold':''}">${formatNumber(b.whs[w.id])}</td>`).join('')}<td class="tabular-nums font-bold text-indigo-700">${formatNumber(b.rowQty)}</td></tr>`).join('');document.getElementById('resultCard').classList.remove('hidden');document.getElementById('notFoundCard').classList.add('hidden');refreshWarehouseHighlights()}
 function calculateGlobalStatistics(){const codes=new Set();let qty=0,value=0;const totals=Object.fromEntries(TARGET_WAREHOUSES.map(w=>[w.id,0]));rawPhysicalProducts.forEach(r=>{const code=String(r['ITEM CODE']||r.itemCode||r['ITEM NAME']||'').trim();if(code)codes.add(code);const rate=parseQuantity(r.RATE??r.rate);TARGET_WAREHOUSES.forEach(w=>{const q=parseQuantity(r[w.id]);totals[w.id]+=q;qty+=q;value+=q*rate})});document.getElementById('statTotalItems').textContent=formatNumber(codes.size);document.getElementById('statTotalQty').textContent=`${formatNumber(qty)} Pcs`;document.getElementById('statTotalValue').textContent=`Rs. ${formatNumber(value)}`;document.getElementById('statWarehouseGrid').innerHTML=TARGET_WAREHOUSES.map(w=>{const pct=qty?((totals[w.id]/qty)*100).toFixed(1):'0.0';return `<div data-warehouse-id="${escapeHtml(w.id)}" class="bg-gray-50 p-2 rounded-lg border"><div class="flex justify-between gap-1 text-[9px]"><span class="text-gray-500 font-semibold truncate">${escapeHtml(w.short)}</span><span>${pct}%</span></div><b class="text-xs block mt-1">${formatNumber(totals[w.id])} Pcs</b></div>`}).join('');refreshWarehouseHighlights()}
-let codeDebounce,fieldDebounce;document.getElementById('codeInput').addEventListener('input',()=>{clearTimeout(codeDebounce);codeDebounce=setTimeout(searchByCodeManual,300)});document.getElementById('fieldSearchInput').addEventListener('input',()=>{clearTimeout(fieldDebounce);fieldDebounce=setTimeout(searchByFieldsManual,400)});
-window.addEventListener('load',()=>{initWarehouseSelector();loadCachedData();if(typeof Html5Qrcode==='undefined'){console.warn('Scanner unavailable; use manual search.');return}const scanner=new Html5Qrcode('reader');scanner.start({facingMode:'environment'},{fps:10,qrbox:{width:240,height:140}},text=>{document.getElementById('codeInput').value=text;searchByCodeManual()}).catch(err=>console.warn('Camera scanner offline or permission denied:',err))});
+
+/* =========================================================
+   SCANNER (BARCODE + QR) WITH GREEN SUCCESS BLINK
+   ========================================================= */
+let qrScanner=null;
+let scanLockUntil=0;              // debounce so one barcode = one scan
+const SCAN_COOLDOWN_MS=1500;
+
+// All the formats a "barcode" could be. QR is kept for existing labels.
+function getSupportedScanFormats(){
+  const F=window.Html5QrcodeSupportedFormats;
+  if(!F) return undefined; // let the library default (all formats)
+  const wanted=['QR_CODE','DATA_MATRIX','AZTEC','PDF_417',
+    'CODE_128','CODE_39','CODE_93','ITF','CODABAR',
+    'EAN_13','EAN_8','UPC_A','UPC_E','UPC_EAN_EXTENSION'];
+  return wanted.map(n=>F[n]).filter(v=>v!==undefined);
+}
+
+function setScanStatus(msg,kind){
+  const el=document.getElementById('scanStatus');
+  if(!el) return;
+  el.textContent=msg;
+  el.className='text-[9px] text-center pt-1 '+(kind==='warn'?'text-amber-600 font-semibold':'text-gray-500');
+}
+
+// GREEN BLINK on successful decode
+function flashScanSuccess(){
+  const flash=document.getElementById('scanFlash');
+  const card=document.getElementById('scanCard');
+  if(flash){
+    flash.classList.remove('flash');
+    void flash.offsetWidth;       // force reflow so the animation restarts
+    flash.classList.add('flash');
+    setTimeout(()=>flash.classList.remove('flash'),900);
+  }
+  if(card){
+    card.classList.remove('scan-card-success');
+    void card.offsetWidth;
+    card.classList.add('scan-card-success');
+    setTimeout(()=>card.classList.remove('scan-card-success'),900);
+  }
+  if(navigator.vibrate){try{navigator.vibrate(60)}catch(e){}}
+}
+
+function handleScanSuccess(decodedText){
+  const now=Date.now();
+  if(now<scanLockUntil) return;          // ignore repeat frames of the same code
+  scanLockUntil=now+SCAN_COOLDOWN_MS;
+
+  const code=String(decodedText||'').trim();
+  if(!code) return;
+
+  flashScanSuccess();                    // 👈 green blink feedback
+
+  document.getElementById('codeInput').value=code;
+  document.getElementById('fieldSearchInput').value='';
+  searchByCodeManual();
+  setScanStatus(`Scanned: ${code}`,'ok');
+}
+
+function handleScanFailure(){/* called every frame with no code – keep silent */}
+
+function startScanner(){
+  if(typeof Html5Qrcode==='undefined'){
+    setScanStatus('Scanner library unavailable — use manual search.','warn');
+    return;
+  }
+  try{
+    qrScanner=new Html5Qrcode('reader',{
+      formatsToSupport:getSupportedScanFormats(),
+      // Use the JS decoder so *every* barcode format above works on all browsers
+      experimentalFeatures:{useBarCodeDetectorIfSupported:false},
+      verbose:false
+    });
+  }catch(err){
+    console.warn('Scanner init failed:',err);
+    setScanStatus('Scanner unavailable — use manual search.','warn');
+    return;
+  }
+
+  const scanConfig={
+    fps:10,
+    // Wide, barcode-friendly scan window (barcodes are long & thin)
+    qrbox:(vw,vh)=>{
+      const width=Math.floor(vw*0.92);
+      const height=Math.floor(Math.min(vh*0.62,220));
+      return {width,height};
+    },
+    aspectRatio:1.7777778,
+    disableFlip:false
+  };
+
+  qrScanner.start({facingMode:'environment'},scanConfig,handleScanSuccess,handleScanFailure)
+    .then(()=>setScanStatus('Point the camera at a barcode or QR code.'))
+    .catch(err=>{
+      console.warn('Camera scanner offline or permission denied:',err);
+      setScanStatus('Camera unavailable — use manual search.','warn');
+    });
+}
+
+let codeDebounce,fieldDebounce;
+document.getElementById('codeInput').addEventListener('input',()=>{clearTimeout(codeDebounce);codeDebounce=setTimeout(searchByCodeManual,300)});
+document.getElementById('fieldSearchInput').addEventListener('input',()=>{clearTimeout(fieldDebounce);fieldDebounce=setTimeout(searchByFieldsManual,400)});
+window.addEventListener('load',()=>{initWarehouseSelector();loadCachedData();startScanner()});
 </script>
 </body>
 </html>
